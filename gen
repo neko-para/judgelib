@@ -1,0 +1,58 @@
+#!/bin/bash
+CC=gcc
+CFLAGS=-fPIC
+
+
+for i in *.sys.c; do
+	j=$(echo $i | sed 's/\.sys\.c//')
+	SYS=("${SYS[@]}" "$j")
+	SYSOBJ=("${SYSOBJ[@]}" ".build.sys/$j.sys.o")
+done
+
+for i in *.usr.c; do
+	j=$(echo $i | sed 's/\.usr\.c//')
+	USR=("${USR[@]}" "$j")
+	USROBJ=("${USROBJ[@]}" ".build.usr/$j.usr.o")
+done
+
+cat > Makefile << EOF
+all: libjudge.sys.so libjudge.usr.so test
+
+clean:
+	-rm -f libjudge.sys.so libjudge.usr.so
+	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test
+
+test: test.cpp
+	$CC -o \$@ \$< $CFLAGS $LDFLAGS -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
+
+libjudge.sys.so: ${SYSOBJ[@]}
+	$CC -shared -o \$@ \$^ $CFLAGS $LDFLAGS
+
+libjudge.usr.so: ${USROBJ[@]}
+	$CC -shared -o \$@ \$^ $CFLAGS $LDFLAGS -I. -L. -ljudge.sys -Wl,--rpath=.
+
+EOF
+
+echo Building sys deps
+mkdir -p .build.sys
+for i in ${SYS[@]}; do
+	echo Building $i deps
+	mkdir -p .build.sys/$i
+	dep=(`gcc -MM $i.sys.c | sed 's/:/\t/'`)
+	cat >> Makefile << EOF
+.build.sys/${dep[0]}: ${dep[1]}
+	$CC -c -o \$@ \$< $CFLAGS
+EOF
+done
+
+echo Building usr deps
+mkdir -p .build.usr
+for i in ${USR[@]}; do
+	echo Building $i deps
+	mkdir -p .build.usr/$i
+	dep=(`gcc -MM $i.usr.c | sed 's/:/\t/'`)
+	cat >> Makefile << EOF
+.build.usr/${dep[0]}: ${dep[1]}
+	$CC -c -o \$@ \$< $CFLAGS
+EOF
+done

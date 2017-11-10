@@ -1,0 +1,7 @@
+.build.sys
+.build.usr
+.vscode
+Makefile
+test
+libjudge.sys.so
+libjudge.usr.so
