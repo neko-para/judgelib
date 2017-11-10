@@ -7,6 +7,6 @@ void abort() {
 	exit(0);
 }
 
-void exit(int ret) {
-	_sys_exit(0);
+void exit(int status) {
+	_sys__exit(status);
 }

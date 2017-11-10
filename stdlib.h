@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 void abort()  __attribute__ ((__noreturn__));
-void exit(int ret)  __attribute__ ((__noreturn__));
+void exit(int status)  __attribute__ ((__noreturn__));
 
 #ifdef __cplusplus
 }

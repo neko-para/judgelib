@@ -1,7 +1,6 @@
 #!/bin/bash
 CC=gcc
-CFLAGS="$CFLAGS -fPIC"
-
+CFLAGS="$CFLAGS -fPIC -std=c99"
 
 for i in *.sys.c; do
 	j=$(echo $i | sed 's/\.sys\.c//')
@@ -20,10 +19,13 @@ all: libjudge.sys.so libjudge.usr.so test
 
 clean:
 	-rm -f libjudge.sys.so libjudge.usr.so
-	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test
+	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test crt.o
 
-test: test.cpp
-	$CC -o \$@ \$< ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
+crt.o: crt.s
+	as -o \$@ \$<
+
+test: test.c crt.o
+	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
 
 libjudge.sys.so: ${SYSOBJ[@]}
 	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}

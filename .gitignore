@@ -2,6 +2,7 @@
 .build.usr
 .vscode
 Makefile
-test
 libjudge.sys.so
 libjudge.usr.so
+crt.o
+test
