@@ -1,6 +1,6 @@
 #!/bin/bash
 CC=gcc
-CFLAGS=-fPIC
+CFLAGS="$CFLAGS -fPIC"
 
 
 for i in *.sys.c; do
@@ -23,13 +23,13 @@ clean:
 	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test
 
 test: test.cpp
-	$CC -o \$@ \$< $CFLAGS $LDFLAGS -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
+	$CC -o \$@ \$< ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
 
 libjudge.sys.so: ${SYSOBJ[@]}
-	$CC -shared -o \$@ \$^ $CFLAGS $LDFLAGS
+	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}
 
 libjudge.usr.so: ${USROBJ[@]}
-	$CC -shared -o \$@ \$^ $CFLAGS $LDFLAGS -I. -L. -ljudge.sys -Wl,--rpath=.
+	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -I. -L. -ljudge.sys -Wl,--rpath=.
 
 EOF
 
@@ -41,7 +41,7 @@ for i in ${SYS[@]}; do
 	dep=(`gcc -MM $i.sys.c | sed 's/:/\t/'`)
 	cat >> Makefile << EOF
 .build.sys/${dep[0]}: ${dep[1]}
-	$CC -c -o \$@ \$< $CFLAGS
+	$CC -c -o \$@ \$< ${CFLAGS}
 EOF
 done
 
@@ -53,6 +53,6 @@ for i in ${USR[@]}; do
 	dep=(`gcc -MM $i.usr.c | sed 's/:/\t/'`)
 	cat >> Makefile << EOF
 .build.usr/${dep[0]}: ${dep[1]}
-	$CC -c -o \$@ \$< $CFLAGS
+	$CC -c -o \$@ \$< ${CFLAGS}
 EOF
 done
