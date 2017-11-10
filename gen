@@ -2,16 +2,18 @@
 CC=gcc
 CFLAGS="$CFLAGS -fPIC -std=c99"
 
+mkdir -p .build.sys .build.usr
+
 for i in *.sys.c; do
 	j=$(echo $i | sed 's/\.sys\.c//')
 	SYS=("${SYS[@]}" "$j")
-	SYSOBJ=("${SYSOBJ[@]}" ".build.sys/$j.sys.o")
+	SYSOBJ=("${SYSOBJ[@]}" ".build.sys/$j.o")
 done
 
 for i in *.usr.c; do
 	j=$(echo $i | sed 's/\.usr\.c//')
 	USR=("${USR[@]}" "$j")
-	USROBJ=("${USROBJ[@]}" ".build.usr/$j.usr.o")
+	USROBJ=("${USROBJ[@]}" ".build.usr/$j.o")
 done
 
 cat > Makefile << EOF
@@ -39,10 +41,9 @@ echo Building sys deps
 mkdir -p .build.sys
 for i in ${SYS[@]}; do
 	echo Building $i deps
-	mkdir -p .build.sys/$i
-	dep=(`gcc -MM $i.sys.c | sed 's/:/\t/'`)
+	dep=(`gcc -MM $i.sys.c | sed 's/.*://'`)
 	cat >> Makefile << EOF
-.build.sys/${dep[0]}: ${dep[1]}
+.build.sys/${i}.o: ${dep[@]}
 	$CC -c -o \$@ \$< ${CFLAGS}
 EOF
 done
@@ -51,10 +52,9 @@ echo Building usr deps
 mkdir -p .build.usr
 for i in ${USR[@]}; do
 	echo Building $i deps
-	mkdir -p .build.usr/$i
-	dep=(`gcc -MM $i.usr.c | sed 's/:/\t/'`)
+	dep=(`gcc -MM $i.usr.c | sed 's/.*://'`)
 	cat >> Makefile << EOF
-.build.usr/${dep[0]}: ${dep[1]}
+.build.usr/${i}.o: ${dep[@]}
 	$CC -c -o \$@ \$< ${CFLAGS}
 EOF
 done

@@ -43,7 +43,6 @@ char *fgets(char* s, int size, struct FILE* stream);
 int fputc(int c, struct FILE* stream);
 int fputs(const char* s, struct FILE* stream);
 
-
 #ifdef __cplusplus
 }
 #endif

@@ -28,7 +28,7 @@ int printf(const char* format, ...) {
 }
 
 int vprintf(const char* format, va_list ap) {
-
+	
 }
 
 int sprintf(char* str, const char* format, ...) {
