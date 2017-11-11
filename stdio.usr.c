@@ -110,6 +110,18 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					length = 3;
 				}
 				switch(*format++) {
+				case 'c':
+					++nformat;
+					func((char)va_arg(ap, int));
+					break;
+				case 's': {
+					const char* str = va_arg(ap, const char*);
+					while (*str) {
+						++nformat;
+						func(*str++);
+					}
+					break;
+				}
 				case 'd':
 				case 'i': {
 					char buf[30];
@@ -167,15 +179,61 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 						func(buf[0]);
 						++i;
 					}
-					while (width-- > pos) {
-						++nformat;
-						func(fill);
+					if (left_justify) {
+						for (; i < pos; ++i) {
+							++nformat;
+							func(buf[i]);
+						}
+						while (width-- > pos) {
+							++nformat;
+							func(fill);
+						}
+					} else {
+						while (width-- > pos) {
+							++nformat;
+							func(fill);
+						}
+						for (; i < pos; ++i) {
+							++nformat;
+							func(buf[i]);
+						}
 					}
-					for (; i < pos; ++i) {
+					break;
+				}
+				case 'p': {
+					char buf[30];
+					int pos = 0;
+					unsigned long val = (unsigned long)va_arg(ap, void*);
+					do { /* Use do to make sure 0 can be formatted. */
+						if ((val & 15) < 10) {
+							buf[pos++] = (val & 15) | '0';
+						} else {
+							buf[pos++] = (val & 15) + ('a' - 10);
+						}
+						val >>= 4;
+					} while (val);
+					for (i = 0; i < pos - i - 1; ++i) {
+						register char k = buf[i];
+						buf[i] = buf[pos - i - 1];
+						buf[pos - i - 1] = k;
+					}
+					width -= 2;
+					if (fill == ' ') {
+						while (width-- > pos) {
+							++nformat;
+							func(' ');
+						}
+					}
+					++nformat;
+					func('0');
+					++nformat;
+					func('x');
+					for (i = 0; i < pos; ++i) {
 						++nformat;
 						func(buf[i]);
 					}
 					break;
+
 				}
 				case 'u':
 				case 'o':
@@ -230,17 +288,15 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 						buf[i] = buf[pos - i - 1];
 						buf[pos - i - 1] = k;
 					}
-					if (prefix_suffix) {
-						switch(radix) {
-						case 8:
-							width -= 1;
-							break;
-						case 16:
-							width -= 2;
-							break;
-						}
+					switch(radix) {
+					case 8:
+						width -= 1;
+						break;
+					case 16:
+						width -= 2;
+						break;
 					}
-					if (fill == ' ') {
+					if (fill == ' ' && !left_justify) {
 						while (width-- > pos) {
 							++nformat;
 							func(' ');
@@ -258,7 +314,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 						func(upp ? 'X' : 'x');
 						break;
 					}
-					if (fill == '0') {
+					if (fill == '0' && !left_justify) {
 						while (width-- > pos) {
 							++nformat;
 							func('0');
@@ -267,6 +323,12 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					for (i = 0; i < pos; ++i) {
 						++nformat;
 						func(buf[i]);
+					}
+					if (left_justify) {
+						while (width-- > pos) {
+							++nformat;
+							func(fill);
+						}
 					}
 					break;
 				}

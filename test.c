@@ -2,5 +2,5 @@
 #include "stdlib.h"
 
 int main() {
-	printf("%6u", 213);
+	printf("%-6X", 213);
 }

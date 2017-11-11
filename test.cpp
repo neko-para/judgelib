@@ -1,5 +1,5 @@
 #include <stdio.h>
 
 int main() {
-	printf("%#6x", 213);
+	printf("%- 06d", 1992);
 }
