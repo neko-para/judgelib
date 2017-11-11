@@ -1,6 +1,6 @@
 #!/bin/bash
 CC=gcc
-CFLAGS="$CFLAGS -fPIC -std=c99"
+CFLAGS="$CFLAGS -fPIC -std=c99 -g"
 
 mkdir -p .build.sys .build.usr
 

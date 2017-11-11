@@ -2,5 +2,5 @@
 #include "stdlib.h"
 
 int main() {
-	fwrite("hello", 5, 1, stdout);
+	printf("%6u", 213);
 }

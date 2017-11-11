@@ -33,6 +33,8 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream);
 int scanf(const char* format, ...);
 int sscanf(const char* str, const char* format, ...);
 
+int fprintf(struct FILE* stream, const char* format, ...);
+int vfprintf(struct FILE* stream, const char* format, va_list ap);
 int printf(const char* format, ...);
 int vprintf(const char* format, va_list ap);
 int sprintf(char* str, const char* format, ...);
