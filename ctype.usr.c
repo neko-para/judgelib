@@ -45,3 +45,11 @@ int isgraph(int ch) {
 int isprint(int ch) {
 	return __RANGE__(ch, ' ', '~');
 }
+
+int tolower(int ch) {
+	return isupper(ch) ? ch + ('a' - 'A') : ch;
+}
+
+int toupper(int ch) {
+	return islower(ch) ? ch + ('A' - 'a') : ch;
+}

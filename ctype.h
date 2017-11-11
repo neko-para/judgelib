@@ -17,6 +17,9 @@ int ispunct(int ch);
 int isgraph(int ch);
 int isprint(int ch);
 
+int tolower(int ch);
+int toupper(int ch);
+
 #ifdef __cplusplus
 }
 #endif

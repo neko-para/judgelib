@@ -2,5 +2,7 @@
 #include "stdlib.h"
 
 int main() {
-	printf("%-6X", 213);
+	while (1) {
+		// printf("%d ", rand());
+	}
 }

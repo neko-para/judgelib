@@ -109,7 +109,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					++format;
 					length = 3;
 				}
-				switch(*format++) { // TODO: Add precision for %s %d,i,u,o,x,X
+				switch(*format++) { /* TODO: Add precision for %s %d,i,u,o,x,X */
 				case 'c':
 					++nformat;
 					func((char)va_arg(ap, int));
@@ -332,7 +332,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					}
 					break;
 				}
-				// TODO: Add float support.
+				/* TODO: Add float support. */
 				}
 				break;
 			} while (0);
