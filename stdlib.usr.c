@@ -14,6 +14,18 @@ void srand(unsigned seed) {
 	next = seed;
 }
 
+void* malloc(size_t size) {
+	return _sys_malloc(size);
+}
+
+void free(void* ptr) {
+	return _sys_free(ptr);
+}
+
+void* realloc(void* ptr, size_t len) {
+	return _sys_realloc(ptr, len);
+}
+
 void abort() {
 	raise(SIGABRT);
 	exit(0);
