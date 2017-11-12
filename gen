@@ -17,11 +17,22 @@ for i in *.usr.c; do
 done
 
 cat > Makefile << EOF
+PREFIX=/usr/local/judgelib
+
 all: libjudge.sys.so libjudge.usr.so test
 
 clean:
 	-rm -f libjudge.sys.so libjudge.usr.so
 	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test crt.o
+
+install: all
+	mkdir -p \$(PREFIX)
+	mkdir -p \$(PREFIX)/include
+	mkdir -p \$(PREFIX)/lib
+	for i in *.h; do install $i \$(PREFIX)/include/$i; done
+	install crt.o \$(PREFIX)/lib/crt.o
+	install libjudge.sys.so \$(PREFIX)/lib/libjudge.sys.so
+	install libjudge.usr.so \$(PREFIX)/lib/libjudge.usr.so
 
 crt.o: crt.s
 	as -o \$@ \$<
@@ -33,7 +44,7 @@ libjudge.sys.so: ${SYSOBJ[@]}
 	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}
 
 libjudge.usr.so: ${USROBJ[@]}
-	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -I. -L. -ljudge.sys -Wl,--rpath=.
+	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -I. -L. -ljudge.sys -Wl,--rpath=\$(PREFIX)/lib -ljudge.sys -Wl,--rpath=.
 
 EOF
 
