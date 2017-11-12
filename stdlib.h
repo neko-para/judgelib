@@ -1,17 +1,13 @@
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 
-#ifndef _SIZE_T_DEF_
-#define _SIZE_T_DEF_
-typedef unsigned long size_t;
-#endif
+#include <stddef.h>
 
 #define RAND_MAX 32768
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* TODO: add malloc & calloc & free */
 int rand();
 void srand(unsigned seed);
 void* malloc(size_t size);

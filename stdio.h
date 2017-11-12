@@ -2,19 +2,7 @@
 #define _STDIO_H_
 
 #include <stdarg.h>
-
-#ifndef NULL
-#ifndef __cplusplus
-#define NULL ((void*)0)
-#else
-#define NULL (0)
-#endif
-#endif
-
-#ifndef _SIZE_T_DEF_
-#define _SIZE_T_DEF_
-typedef unsigned long size_t;
-#endif
+#include <stddef.h>
 
 #define EOF ((int)-1)
 
