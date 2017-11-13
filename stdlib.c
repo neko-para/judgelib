@@ -17,10 +17,10 @@ void srand(unsigned seed) {
 static void* ptr;
 void* _SBRK(size_t l) {
 	if (!ptr) {
-		ptr = (void*)syscall(__NR_brk);
+		ptr = (void*)syscall(__NR_brk, 0, 0, 0);
 	}
 	ptr += l;
-	return ptr - l;
+	return (void*)syscall(__NR_brk, (long)ptr, 0, 0);
 }
 
 typedef struct Splay {
@@ -300,5 +300,5 @@ void exit(int status) {
 }
 
 void _exit(int status) {
-	syscall(__NR_exit, status);
+	syscall(__NR_exit, status, 0, 0);
 }

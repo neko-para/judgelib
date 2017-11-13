@@ -8,7 +8,7 @@ struct FILE* stdout = (struct FILE*)1;
 struct FILE* stderr = (struct FILE*)2;
 
 int fflush(struct FILE* stream) {
-	return syscall(__NR_fsync, (long)stream);
+	return syscall(__NR_fsync, (long)stream, 0, 0);
 }
 
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream) {

@@ -3,6 +3,10 @@
 #include "time.h"
 
 int main() {
-	printf("%u", 123);
-	fflush(stdout);
+	while (true) {
+		printf("%6ld\r", clock());
+		for (int i = 1; i <= 10000000; ++i) {
+			
+		}
+	}
 }

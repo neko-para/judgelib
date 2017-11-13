@@ -33,7 +33,7 @@ install: all
 	install crt.o \$(PREFIX)/lib/crt.o
 	install libjudge.so \$(PREFIX)/lib/libjudge.so
 
-crt.o: crt.s
+crt.o: crt${BIT}.s
 	as -o \$@ \$< --${BIT}
 
 test: test.cpp crt.o
