@@ -1,8 +1,6 @@
-.build.sys
-.build.usr
+.build
 .vscode
 Makefile
-libjudge.sys.so
-libjudge.usr.so
+libjudge.so
 crt.o
 test

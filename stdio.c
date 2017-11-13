@@ -1,22 +1,38 @@
 #include "stdio.h"
 #include "string.h"
 #include "ctype.h"
-#include "sys.h"
+#include "syscall.h"
 
 struct FILE* stdin = (struct FILE*)0;
 struct FILE* stdout = (struct FILE*)1;
 struct FILE* stderr = (struct FILE*)2;
 
 int fflush(struct FILE* stream) {
-	return _sys_fflush((int)stream);
+	return syscall(__NR_fsync, (long)stream);
 }
 
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	return _sys_fread(ptr, size, nmemb, (int)stream);
+	size_t i = 0;
+	for (i = 0; i < nmemb; ++i) {
+		if (size != syscall(__NR_read, (long)stream, (long)ptr, size)) {
+			break;
+		} else {
+			ptr += size;
+		}
+	}
+	return i;
 }
 
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	return _sys_fwrite(ptr, size, nmemb, (int)stream);
+	size_t i = 0;
+	for (i = 0; i < nmemb; ++i) {
+		if (size != syscall(__NR_write, (long)stream, (long)ptr, size)) {
+			break;
+		} else {
+			ptr += size;
+		}
+	}
+	return i;
 }
 
 static struct FILE* fprintf_stream;

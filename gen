@@ -1,71 +1,56 @@
 #!/bin/bash
 CC=gcc
-CFLAGS="$CFLAGS -fPIC -g"
+BIT=$1
 
-mkdir -p .build.sys .build.usr
+if [ -z "$BIT" ]; then
+	BIT=64
+fi
+CFLAGS="$CFLAGS -fPIC -g -m$BIT -D_JUDGE_BIT_=$BIT"
 
-for i in *.sys.c; do
-	j=$(echo $i | sed 's/\.sys\.c//')
+mkdir -p .build
+
+for i in *.c; do
+	j=$(echo $i | sed 's/\.c//')
 	SYS=("${SYS[@]}" "$j")
-	SYSOBJ=("${SYSOBJ[@]}" ".build.sys/$j.o")
-done
-
-for i in *.usr.c; do
-	j=$(echo $i | sed 's/\.usr\.c//')
-	USR=("${USR[@]}" "$j")
-	USROBJ=("${USROBJ[@]}" ".build.usr/$j.o")
+	SYSOBJ=("${SYSOBJ[@]}" ".build/$j.o")
 done
 
 cat > Makefile << EOF
 PREFIX=/usr/local/judgelib
 
-all: libjudge.sys.so libjudge.usr.so test
+all: libjudge.so test
 
 clean:
-	-rm -f libjudge.sys.so libjudge.usr.so
-	-rm -f ${SYSOBJ[@]} ${USROBJ[@]} test crt.o
+	-rm -f libjudge.so
+	-rm -f ${SYSOBJ[@]} test crt.o
 
 install: all
 	mkdir -p \$(PREFIX)
 	mkdir -p \$(PREFIX)/include
 	mkdir -p \$(PREFIX)/lib
-	for i in *.h; do install $i \$(PREFIX)/include/$i; done
+	for i in *.h; do install \$\$i \$(PREFIX)/include/\$\$i; chmod 644 \$(PREFIX)/include/\$\$i; done
+	rm \$(PREFIX)/include/syscall.h
 	install crt.o \$(PREFIX)/lib/crt.o
-	install libjudge.sys.so \$(PREFIX)/lib/libjudge.sys.so
-	install libjudge.usr.so \$(PREFIX)/lib/libjudge.usr.so
+	install libjudge.so \$(PREFIX)/lib/libjudge.so
 
 crt.o: crt.s
-	as -o \$@ \$<
+	as -o \$@ \$< --${BIT}
 
-test: test.c crt.o
-	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge.usr -Wl,--rpath=.
+test: test.cpp crt.o
+	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=.
 
-libjudge.sys.so: ${SYSOBJ[@]}
+libjudge.so: ${SYSOBJ[@]}
 	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}
 
-libjudge.usr.so: ${USROBJ[@]}
-	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -I. -L. -ljudge.sys -Wl,--rpath=\$(PREFIX)/lib -ljudge.sys -Wl,--rpath=.
-
 EOF
 
-echo Building sys deps
-mkdir -p .build.sys
+echo Building deps
+mkdir -p .build
 for i in ${SYS[@]}; do
 	echo Building $i deps
-	dep=(`gcc -MM $i.sys.c | sed 's/.*://'`)
+	dep=(`gcc -MM $i.c | sed 's/.*://'`)
 	cat >> Makefile << EOF
-.build.sys/${i}.o: ${dep[@]}
-	$CC -c -o \$@ \$< ${CFLAGS}
-EOF
-done
-
-echo Building usr deps
-mkdir -p .build.usr
-for i in ${USR[@]}; do
-	echo Building $i deps
-	dep=(`gcc -MM $i.usr.c | sed 's/.*://'`)
-	cat >> Makefile << EOF
-.build.usr/${i}.o: ${dep[@]}
+.build/${i}.o: ${dep[@]}
 	$CC -c -o \$@ \$< ${CFLAGS}
 EOF
 done

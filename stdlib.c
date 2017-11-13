@@ -1,14 +1,26 @@
-#include <unistd.h>
-#include "sys.h"
+#include "stdlib.h"
+#include "signal.h"
+#include "syscall.h"
 
-void _sys__exit(int status) {
-	__asm__(
-		"movl $1, %%eax;"
-		"movl %0, %%ebx;"
-		"int $0x80;"
-		:
-		: "r" (status)
-	);
+static void (*atexit_handler)(void);
+
+unsigned long next = 1;
+int rand() {
+	next = next * 1103515245 + 12345;
+	return (unsigned)(next >> 16) & 32767;
+}
+
+void srand(unsigned seed) {
+	next = seed;
+}
+
+static void* ptr;
+void* _SBRK(size_t l) {
+	if (!ptr) {
+		ptr = (void*)syscall(__NR_brk);
+	}
+	ptr += l;
+	return ptr - l;
 }
 
 typedef struct Splay {
@@ -101,7 +113,7 @@ static Splay* Right(Splay* p) {
 	return p;
 }
 
-Splay* CheckValid(Splay* p, Splay* ptr) {
+static Splay* CheckValid(Splay* p, Splay* ptr) {
 	if (p == ptr) {
 		return p;
 	} else if (ptr < p) {
@@ -119,7 +131,7 @@ Splay* CheckValid(Splay* p, Splay* ptr) {
 	}
 }
 
-Splay* FindFirstValid(Splay* p, size_t l) {
+static Splay* FindFirstValid(Splay* p, size_t l) {
 	if (p->child[0] && p->child[0]->maxi >= l) {
 		return FindFirstValid(p->child[0], l);
 	} else if (!p->use && p->len >= l) {
@@ -129,15 +141,15 @@ Splay* FindFirstValid(Splay* p, size_t l) {
 	}
 }
 
-void FixAlign(size_t* l) {
+static void FixAlign(size_t* l) {
 	if (*l & 3) {
 		*l += 4 - (*l & 3);
 	}
 }
 
-void* _sys_malloc(size_t size) {
+void* malloc(size_t size) {
 	if (!root) {
-		root = sbrk(sizeof(Splay));
+		root = _SBRK(sizeof(Splay));
 		Init(root, NULL, 0);
 		root->use = 1;
 	}
@@ -145,11 +157,11 @@ void* _sys_malloc(size_t size) {
 	if (root->maxi < size) {
 		SplayTo(Right(root), &root);
 		if (root->use) {
-			root->child[1] = sbrk(sizeof(Splay) + size);
+			root->child[1] = _SBRK(sizeof(Splay) + size);
 			Init(root->child[1], root, size);
 			Update(root);
 		} else { /* Increase the last block */
-			sbrk(size - root->len);
+			_SBRK(size - root->len);
 			root->len = size;
 			Update(root);
 		}
@@ -160,7 +172,7 @@ void* _sys_malloc(size_t size) {
 	return (void*)root + sizeof(Splay);
 }
 
-void _sys_free(void* ptr) {
+void free(void* ptr) {
 	Splay* p = CheckValid(root, ptr - sizeof(Splay));
 	if (!p) {
 		return;
@@ -192,7 +204,7 @@ void _sys_free(void* ptr) {
 	}
 }
 
-void* _sys_realloc(void* ptr, size_t size) {
+void* realloc(void* ptr, size_t size) {
 	Splay* p = CheckValid(root, ptr - sizeof(Splay));
 	if (!p) {
 		return NULL;
@@ -258,16 +270,35 @@ void* _sys_realloc(void* ptr, size_t size) {
 					return ptr;
 				}
 			} else {
-				unsigned* pn = _sys_malloc(size);
+				unsigned* pn = malloc(size);
 				unsigned* p = pn;
 				unsigned* pr = (unsigned*)ptr;
 				size_t l = root->len >> 2;
 				while (l--) {
 					*p++ = *pr++;
 				}
-				_sys_free(ptr);
+				free(ptr);
 				return pn;
 			}
 		}
 	}
+}
+
+void abort() {
+	raise(SIGABRT);
+	exit(0);
+}
+
+int atexit(void (*func)(void)) {
+	atexit_handler = func;
+	return 0;
+}
+
+void exit(int status) {
+	atexit_handler ? atexit_handler() : (void)0;
+	_exit(status);
+}
+
+void _exit(int status) {
+	syscall(__NR_exit, status);
 }

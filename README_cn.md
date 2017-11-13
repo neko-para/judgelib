@@ -19,7 +19,7 @@
 为了使用这个库, 这样编译代码:
 
 ```shell
-gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge.usr --Wl,--rpath=${PREFIX}/lib
+gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib
 ```
 
 ${PREFIX}是库的安装目录.

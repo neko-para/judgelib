@@ -19,7 +19,7 @@ Type ```make install PREFIX=${PREFIX}``` to install to ${PREFIX}, default is /us
 To use this lib, compile the program like this:
 
 ```shell
-gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge.usr --Wl,--rpath=${PREFIX}/lib
+gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib
 ```
 
 Where ${PREFIX} is the install prefix.
