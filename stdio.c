@@ -3,10 +3,6 @@
 #include "ctype.h"
 #include "syscall.h"
 
-struct FILE* stdin = (struct FILE*)0;
-struct FILE* stdout = (struct FILE*)1;
-struct FILE* stderr = (struct FILE*)2;
-
 int fflush(struct FILE* stream) {
 	return syscall(__NR_fsync, (long)stream, 0, 0);
 }

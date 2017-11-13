@@ -10,9 +10,11 @@
 extern "C" {
 #endif
 
-extern struct FILE* stdin;
-extern struct FILE* stdout;
-extern struct FILE* stderr;
+struct FILE;
+
+#define stdin ((struct FILE*)0)
+#define stdout ((struct FILE*)1)
+#define stderr ((struct FILE*)2)
 
 int fflush(struct FILE* stream);
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream);
