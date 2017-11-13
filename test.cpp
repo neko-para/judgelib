@@ -3,10 +3,5 @@
 #include "time.h"
 
 int main() {
-	while (true) {
-		printf("%6ld\r", clock());
-		for (int i = 1; i <= 10000000; ++i) {
-			
-		}
-	}
+	printf("%+6.4d", 132);
 }

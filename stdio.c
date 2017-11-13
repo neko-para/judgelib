@@ -121,14 +121,14 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					++format;
 					length = 3;
 				}
-				switch(*format++) { /* TODO: Add precision for %s %d,i,u,o,x,X */
+				switch(*format++) {
 				case 'c':
 					++nformat;
 					func((char)va_arg(ap, int));
 					break;
 				case 's': {
 					const char* str = va_arg(ap, const char*);
-					while (*str) {
+					while (*str && preci-- > 0) {
 						++nformat;
 						func(*str++);
 					}
@@ -224,6 +224,9 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 						}
 						val >>= 4;
 					} while (val);
+					while (pos < preci) {
+						buf[pos++] = '0';
+					}
 					for (i = 0; i < pos - i - 1; ++i) {
 						register char k = buf[i];
 						buf[i] = buf[pos - i - 1];
@@ -294,6 +297,9 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 							}
 							val >>= 4;
 						} while (val);
+						while (pos < preci) {
+							buf[pos++] = '0';
+						}
 					}
 					for (i = 0; i < pos - i - 1; ++i) {
 						register char k = buf[i];
