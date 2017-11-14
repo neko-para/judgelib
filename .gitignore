@@ -1,6 +1,6 @@
 .build
 .vscode
 Makefile
-libjudge.so
-crt.o
+*.so
+*.o
 test

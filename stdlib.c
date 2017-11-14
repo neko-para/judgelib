@@ -4,7 +4,7 @@
 
 static void (*atexit_handler)(void);
 
-unsigned long next = 1;
+static unsigned long next = 1;
 int rand() {
 	next = next * 1103515245 + 12345;
 	return (unsigned)(next >> 16) & 32767;
@@ -16,9 +16,6 @@ void srand(unsigned seed) {
 
 static void* ptr;
 void* _SBRK(size_t l) {
-	if (!ptr) {
-		ptr = (void*)syscall(__NR_brk, 0, 0, 0);
-	}
 	ptr += l;
 	return (void*)syscall(__NR_brk, (long)ptr, 0, 0);
 }
@@ -148,11 +145,6 @@ static void FixAlign(size_t* l) {
 }
 
 void* malloc(size_t size) {
-	if (!root) {
-		root = _SBRK(sizeof(Splay));
-		Init(root, NULL, 0);
-		root->use = 1;
-	}
 	FixAlign(&size);
 	if (root->maxi < size) {
 		SplayTo(Right(root), &root);
@@ -301,4 +293,11 @@ void exit(int status) {
 
 void _exit(int status) {
 	syscall(__NR_exit, status, 0, 0);
+}
+
+void __judge_lib_init() {
+	ptr = (void*)syscall(__NR_brk, 0, 0, 0);
+	root = _SBRK(sizeof(Splay));
+	Init(root, NULL, 0);
+	root->use = 1;
 }
