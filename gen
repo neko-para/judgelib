@@ -22,7 +22,7 @@ all: libjudge.so test
 
 clean:
 	-rm -f libjudge.so
-	-rm -f ${SYSOBJ[@]} test crt.o syscall.o
+	-rm -f ${SYSOBJ[@]} test crt.o
 
 install: all
 	mkdir -p \$(PREFIX)
@@ -36,13 +36,10 @@ install: all
 crt.o: crt${BIT}.s
 	as -o \$@ \$< --${BIT}
 
-syscall.o: syscall${BIT}.s
-	as -o \$@ \$< --${BIT}
-
 test: test.cpp crt.o
 	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=.
 
-libjudge.so: ${SYSOBJ[@]} syscall.o
+libjudge.so: ${SYSOBJ[@]}
 	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}
 
 EOF
