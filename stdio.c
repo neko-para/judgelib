@@ -350,7 +350,16 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					}
 					break;
 				}
-				/* TODO: Add float support. */
+				case 'f': {
+					long double value;
+					if (length == 3) {
+						value = va_arg(ap, long double);
+					} else {
+						value = va_arg(ap, double);
+					}
+					break;
+				}
+				/* TODO: Add float f, e, E, g, G support. */
 				}
 				break;
 			} while (0);
