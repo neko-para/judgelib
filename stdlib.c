@@ -1,5 +1,6 @@
 #include "stdlib.h"
 #include "signal.h"
+#include "string.h"
 #include "syscall.h"
 
 static void (*atexit_handler)(void);
@@ -293,6 +294,76 @@ void exit(int status) {
 
 void _exit(int status) {
 	syscall(__NR_exit, status, 0, 0);
+}
+
+int abs(int n) {
+	return n < 0 ? -n : n;
+}
+
+long labs(long n) {
+	return n < 0 ? -n : n;
+}
+
+div_t div(int numerator, int denominator) {
+	return (div_t){numerator / denominator, numerator % denominator};
+}
+
+ldiv_t ldiv(long numerator, long denominator) {
+	return (ldiv_t){numerator / denominator, numerator % denominator};
+}
+
+void* bsearch(const void* key, const void* base, size_t num, size_t size, int (*compar)(const void*, const void*)) {
+	while (num) {
+		size_t half = (num >> 1) * size;
+		int ret = compar(base + half, key);
+		if (!ret) {
+			return (void*)(base + half);
+		} else if (ret > 0) {
+			num >>= 1;
+		} else {
+			base = base + half + size;
+			num -= num >> 1;
+			--num;
+		}
+	}
+	return 0;
+}
+
+void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const void*)) {
+	if (num < 2) {
+		return;
+	}
+	size_t i;
+	void* temp = malloc(size);
+	--num;
+	const void* key = base + num * size;
+	void* now = base;
+	void* low = base;
+	void* same = base;
+	for (i = 0; i < num; ++i) {
+		int ret = compar(now, key);
+		if (ret == 0) {
+			memcpy(temp, now, size);
+			memcpy(now, same, size);
+			memcpy(same, temp, size);
+			same += size;
+		} else if (ret < 0) {
+			memcpy(temp, now, size);
+			memcpy(now, same, size);
+			memcpy(same, low, size);
+			memcpy(low, temp, size);
+			low += size;
+			same += size;
+		}
+		now += size;
+	}
+	free(temp);
+	memcpy(temp, now, size);
+	memcpy(now, same, size);
+	memcpy(same, temp, size);
+	same += size;
+	qsort(base, (low - base) / size, size, compar);
+	qsort(same, num + 1 - (same - base) / size, size, compar);
 }
 
 void __judge_lib_init() {
