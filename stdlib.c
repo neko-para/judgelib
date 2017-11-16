@@ -383,11 +383,12 @@ double atof(const char* str) {
 		ret = ret * 10 + (*str++ ^ '0');
 	}
 	if (*str == '.') {
-		++str;
+		double flt = 0;
+		const char* p = ++str;
 		while (*str && isdigit(*str)) {
-			ret += (*str++ ^ '0') * k;
-			k /= 10;
+			flt += flt * 10 + (*str++ ^ '0');
 		}
+		ret += flt * pow(10, -(long)(str - p));
 	}
 	if (*str == 'e' || *str == 'E') {
 		++str;
