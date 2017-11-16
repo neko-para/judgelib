@@ -1,4 +1,5 @@
 #include "stdlib.h"
+#include "stdio.h"
 #include "signal.h"
 #include "string.h"
 #include "ctype.h"
@@ -291,6 +292,8 @@ int atexit(void (*func)(void)) {
 
 void exit(int status) {
 	atexit_handler ? atexit_handler() : (void)0;
+	fflush(stdout);
+	fflush(stderr);
 	_exit(status);
 }
 

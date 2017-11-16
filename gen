@@ -1,5 +1,6 @@
 #!/bin/bash
 CC=gcc
+AS=as
 BIT=$1
 
 if [ -z "$BIT" ]; then
@@ -20,6 +21,10 @@ PREFIX=/usr/local/judgelib
 
 all: libjudge.so test
 
+Makefile: gen
+	./gen
+	make
+
 clean:
 	-rm -f libjudge.so
 	-rm -f ${SYSOBJ[@]} test crt.o
@@ -33,24 +38,24 @@ install: all
 	install crt.o \$(PREFIX)/lib/crt.o
 	install libjudge.so \$(PREFIX)/lib/libjudge.so
 
-crt.o: crt${BIT}.s
-	as -o \$@ \$< --${BIT}
+crt.o: Makefile crt${BIT}.s
+	$AS -o crt.o crt${BIT}.s --${BIT}
 
-test: test.cpp crt.o
-	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=. -fno-builtin-printf
+test: Makefile test.cpp crt.o
+	$CC -o test test.cpp crt.o ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=. -fno-builtin-printf
 
 libjudge.so: ${SYSOBJ[@]}
-	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -lm
+	$CC -shared -o libjudge.so ${SYSOBJ[@]} ${CFLAGS} ${LDFLAGS} -lm
 
 EOF
-
 echo Building deps
 mkdir -p .build
 for i in ${SYS[@]}; do
 	echo Building $i deps
-	dep=(`gcc -MM $i.c | sed 's/.*://'`)
+	dep=(`\$CC -MM $i.c | sed 's/\\\\//' | sed 's/.*://'`)
 	cat >> Makefile << EOF
-.build/${i}.o: ${dep[@]}
-	$CC -c -o \$@ \$< ${CFLAGS}
+.build/$i.o: ${dep[@]} Makefile
+	$CC -c -o .build/$i.o $i.c ${CFLAGS}
+
 EOF
 done

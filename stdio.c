@@ -5,32 +5,51 @@
 #include "math.h"
 #include "syscall.h"
 
+static char out_buffer[3][1 << 16];
+static size_t out_pos[3];
+static char in_buffer[1 << 16];
+static size_t in_pos, in_size;
+
+static void _cache_write(long fd, const char* str, register size_t len) {
+	while (len--) {
+		out_buffer[fd][out_pos[fd]++] = *str++;
+		if (out_pos[fd] >> 16) {
+			syscall(__NR_write, fd, (long)out_buffer[fd], 1 << 16);
+			out_pos[fd] = 0;
+		}
+	}
+}
+
+static size_t _cache_read(long fd, char* str, register size_t len) {
+	size_t i = 0;
+	for (i = 0; i < len; ++i) {
+		if (in_pos == in_size) {
+			in_size = syscall(__NR_read, 0, (long)in_buffer, 1 << 16);
+			if (!in_size) {
+				return i;
+			}
+		}
+		*str++ = in_buffer[in_pos++];
+	}
+	return i;
+}
+
 int fflush(struct FILE* stream) {
-	return syscall(__NR_fsync, (long)stream, 0, 0);
+	long fd = ((long)stream);
+	if (stream) {
+		syscall(__NR_write, fd, (long)out_buffer[fd], 1 << 16);
+		out_pos[fd] = 0;
+	}
+	return syscall(__NR_fsync, fd, 0, 0);
 }
 
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	size_t i = 0;
-	for (i = 0; i < nmemb; ++i) {
-		if (size != syscall(__NR_read, (long)stream, (long)ptr, size)) {
-			break;
-		} else {
-			ptr += size;
-		}
-	}
-	return i;
-}
+	return _cache_read((long)stream, ptr, size * nmemb) / nmemb;
+} // TODO: Try to fix the problem of the rest size.
 
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	size_t i = 0;
-	for (i = 0; i < nmemb; ++i) {
-		if (size != syscall(__NR_write, (long)stream, (long)ptr, size)) {
-			break;
-		} else {
-			ptr += size;
-		}
-	}
-	return i;
+	_cache_write((long)stream, ptr, size * nmemb);
+	return nmemb;
 }
 
 static int printf_nformat;
@@ -47,7 +66,7 @@ static void _print_str(char c) {
 	++printf_nformat;
 }
 
-static void _reverse(char* beg, char* end) {
+static void _reverse(register char* beg, register char* end) {
 	--end;
 	while (beg < end) {
 		char k = *beg;
