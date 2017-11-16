@@ -37,10 +37,10 @@ crt.o: crt${BIT}.s
 	as -o \$@ \$< --${BIT}
 
 test: test.cpp crt.o
-	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=.
+	$CC -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=. -fno-builtin-printf
 
 libjudge.so: ${SYSOBJ[@]}
-	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS}
+	$CC -shared -o \$@ \$^ ${CFLAGS} ${LDFLAGS} -lm
 
 EOF
 

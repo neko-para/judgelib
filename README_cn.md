@@ -8,7 +8,7 @@
 
 你需要GNU bash, gcc和GNU make来编译这个库.
 
-执行 ```./gen``` 来生成Makefile.
+执行 ```./gen ${BIT}``` 来生成${BIT}位的Makefile.
 
 执行 ```make``` 来编译.
 
@@ -19,7 +19,7 @@
 为了使用这个库, 这样编译代码:
 
 ```shell
-gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib
+gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib -lm
 ```
 
 ${PREFIX}是库的安装目录.

@@ -1,6 +1,8 @@
 #include "stdlib.h"
 #include "signal.h"
 #include "string.h"
+#include "ctype.h"
+#include "math.h"
 #include "syscall.h"
 
 static void (*atexit_handler)(void);
@@ -364,6 +366,70 @@ void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const
 	same += size;
 	qsort(base, (low - base) / size, size, compar);
 	qsort(same, num + 1 - (same - base) / size, size, compar);
+}
+
+double atof(const char* str) {
+	register double ret = 0;
+	register double k = 0.1;
+	register int f = 1;
+	while (*str && isspace(*str)) {
+		++str;
+	}
+	if (*str == '+' || *str == '-') {
+		f = (*str == '-') ? -1 : 1;
+		++str;
+	}
+	while (*str && isdigit(*str)) {
+		ret = ret * 10 + (*str++ ^ '0');
+	}
+	if (*str == '.') {
+		++str;
+		while (*str && isdigit(*str)) {
+			ret += (*str++ ^ '0') * k;
+			k /= 10;
+		}
+	}
+	if (*str == 'e' || *str == 'E') {
+		++str;
+		register long i = 0;
+		while (*str && isdigit(*str)) {
+			i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
+		}
+		ret *= pow(10, i);
+	}
+	return ret * f;
+}
+
+int atoi(const char* str) {
+	register int i = 0;
+	register int f = 1;
+	while (*str && isspace(*str)) {
+		++str;
+	}
+	if (*str == '+' || *str == '-') {
+		f = (*str == '-') ? -1 : 1;
+		++str;
+	}
+	while (*str && isdigit(*str)) {
+		i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
+	}
+	return i * f;
+}
+
+long atol(const char* str) {
+	register long i = 0;
+	register int f = 1;
+	while (*str && isspace(*str)) {
+		++str;
+	}
+	if (*str == '+' || *str == '-') {
+		f = (*str == '-') ? -1 : 1;
+		++str;
+	}
+	while (*str && isdigit(*str)) {
+		i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
+	}
+	return i * f;
 }
 
 void __judge_lib_init() {

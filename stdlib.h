@@ -32,6 +32,9 @@ div_t div(int numerator, int denominator);
 ldiv_t ldiv(long numerator, long denominator);
 void* bsearch(const void* key, const void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
 void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
+double atof(const char* str);
+int atoi(const char* str);
+long atol(const char* str);
 
 #ifdef __cplusplus
 }
