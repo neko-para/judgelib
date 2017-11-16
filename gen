@@ -1,4 +1,10 @@
 #!/bin/bash
+if [ ! -d .git ]; then
+	git clone https://github.com/neko-para/judgelib.git
+	cd judgelib
+	exec bash gen
+fi
+
 CC=gcc
 AS=as
 BIT=$1
@@ -20,7 +26,7 @@ cat > Makefile << EOF
 BIT=${BIT}
 PREFIX=/usr/local/judgelib
 
-all: Makefile libjudge.so test
+all: Makefile libjudge.so crt.o
 
 32:
 	@if [ \$(BIT) != 32 ]; then echo "Switch to 32 bit"; ./gen 32; fi
@@ -61,6 +67,19 @@ test: Makefile test.cpp crt.o
 libjudge.so: ${SYSOBJ[@]}
 	@echo -e "\\rLink libjudge.so"
 	@$CC -shared -o libjudge.so ${SYSOBJ[@]} ${CFLAGS} ${LDFLAGS} -lm 2>> log
+
+update:
+	@if [ -d .git ]; then git pull; fi
+
+help:
+	@echo "make all -> Build libjudge.so & crt.o (default)"
+	@echo "make clean -> Clean objects & libraries"
+	@echo "make test -> Build test"
+	@echo "make install -> Install librarys to ${PREFIX}"
+	@echo "make 32 -> Specify to build 32 version"
+	@echo "make 64 -> Specify to build 64 version"
+	@echo "make update -> Update the source (need git)"
+	@echo "make help -> Show this help"
 
 EOF
 echo Build deps
