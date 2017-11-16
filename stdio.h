@@ -31,9 +31,11 @@ int sprintf(char* str, const char* format, ...);
 int vsprintf(char* str, const char* format, va_list ap);
 
 int fgetc(struct FILE* stream);
-char *fgets(char* s, int size, struct FILE* stream);
+char* fgets(char* s, int size, struct FILE* stream);
+char* gets(char* s);
 int fputc(int c, struct FILE* stream);
 int fputs(const char* s, struct FILE* stream);
+int puts(const char* s);
 
 #ifdef __cplusplus
 }

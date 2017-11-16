@@ -1,6 +1,8 @@
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 #include "ctype.h"
+#include "math.h"
 #include "syscall.h"
 
 int fflush(struct FILE* stream) {
@@ -31,26 +33,37 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
 	return i;
 }
 
+static int printf_nformat;
 static struct FILE* fprintf_stream;
 static char* sprintf_ptr;
 
 static void _print_file(char c) {
 	fputc(c, fprintf_stream);
+	++printf_nformat;
 }
 
 static void _print_str(char c) {
 	*sprintf_ptr++ = c;
+	++printf_nformat;
+}
+
+static void _reverse(char* beg, char* end) {
+	--end;
+	while (beg < end) {
+		char k = *beg;
+		*beg++ = *end;
+		*end-- = k;
+	}
 }
 
 static int _printf(void (*func)(char), const char* format, va_list ap) {
-	int nformat = 0;
 	int i;
+	printf_nformat = 0;
 	while (*format) {
 		switch(*format) {
 		case '%':
 			++format;
 			if (*format == '%') {
-				++nformat;
 				++format;
 				func('%');
 				break;
@@ -98,7 +111,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 				}
 				if (*format == '.') {
 					++format;
-					if (isdigit(*++format)) {
+					if (isdigit(*format)) {
 						preci = *format ^ '0';
 						++format;
 					} else if (*format == '*') {
@@ -123,13 +136,11 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 				}
 				switch(*format++) {
 				case 'c':
-					++nformat;
 					func((char)va_arg(ap, int));
 					break;
 				case 's': {
 					const char* str = va_arg(ap, const char*);
 					while (*str && preci-- > 0) {
-						++nformat;
 						func(*str++);
 					}
 					break;
@@ -179,34 +190,24 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 							val /= 10;
 						} while (val);
 					}
-					i = signw;
-					for (; i < pos + signw - i - 1; ++i) {
-						register char k = buf[i];
-						buf[i] = buf[pos + signw - i - 1];
-						buf[pos + signw - i - 1] = k;
-					}
+					_reverse(buf + signw, buf + pos);
 					i = 0;
 					if (fill == '0' && !isdigit(buf[0])) {
-						++nformat;
 						func(buf[0]);
 						++i;
 					}
 					if (left_justify) {
 						for (; i < pos; ++i) {
-							++nformat;
 							func(buf[i]);
 						}
 						while (width-- > pos) {
-							++nformat;
 							func(fill);
 						}
 					} else {
 						while (width-- > pos) {
-							++nformat;
 							func(fill);
 						}
 						for (; i < pos; ++i) {
-							++nformat;
 							func(buf[i]);
 						}
 					}
@@ -227,24 +228,16 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					while (pos < preci) {
 						buf[pos++] = '0';
 					}
-					for (i = 0; i < pos - i - 1; ++i) {
-						register char k = buf[i];
-						buf[i] = buf[pos - i - 1];
-						buf[pos - i - 1] = k;
-					}
+					_reverse(buf, buf + pos);
 					width -= 2;
 					if (fill == ' ') {
 						while (width-- > pos) {
-							++nformat;
 							func(' ');
 						}
 					}
-					++nformat;
 					func('0');
-					++nformat;
 					func('x');
 					for (i = 0; i < pos; ++i) {
-						++nformat;
 						func(buf[i]);
 					}
 					break;
@@ -301,11 +294,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 							buf[pos++] = '0';
 						}
 					}
-					for (i = 0; i < pos - i - 1; ++i) {
-						register char k = buf[i];
-						buf[i] = buf[pos - i - 1];
-						buf[pos - i - 1] = k;
-					}
+					_reverse(buf, buf + pos);
 					switch(radix) {
 					case 8:
 						width -= 1;
@@ -316,35 +305,28 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					}
 					if (fill == ' ' && !left_justify) {
 						while (width-- > pos) {
-							++nformat;
 							func(' ');
 						}
 					}
 					switch(radix) {
 					case 8:
-						++nformat;
 						func('0');
 						break;
 					case 16:
-						++nformat;
 						func('0');
-						++nformat;
 						func(upp ? 'X' : 'x');
 						break;
 					}
 					if (fill == '0' && !left_justify) {
 						while (width-- > pos) {
-							++nformat;
 							func('0');
 						}
 					}
 					for (i = 0; i < pos; ++i) {
-						++nformat;
 						func(buf[i]);
 					}
 					if (left_justify) {
 						while (width-- > pos) {
-							++nformat;
 							func(fill);
 						}
 					}
@@ -357,19 +339,49 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					} else {
 						value = va_arg(ap, double);
 					}
+					if (preci == -1) {
+						preci = 6;
+					}
+					long double itp, flp;
+					flp = modfl(value, &itp);
+					int bit = (itp == 0 ? 1 : ceil(log10(itp))) + preci + 5;
+					char* temp = (char*)malloc(bit);
+					int ip = 0;
+					do {
+						temp[ip++] = (int)roundl(fmodl(itp, 10)) ^ '0';
+						itp = floor(itp / 10);
+					} while (itp >= 1 - 1e-4);
+					_reverse(temp, temp + ip);
+					if (preci || prefix_suffix) {
+						temp[ip++] = '.';
+					}
+					int bs = ip;
+					flp *= pow(10, preci);
+					if (modfl(flp, &flp) >= 0.5) {
+						flp += 1;
+					}
+					for (i = 0; i < preci; ++i) {
+						temp[ip++] = (int)roundl(fmodl(flp, 10)) ^ '0';
+						flp = floor(flp / 10);
+					}
+					_reverse(temp + bs, temp + bs + preci);
+					for (i = 0; i < ip; ++i) {
+						func(temp[i]);
+					}
+					free(temp);
 					break;
 				}
-				/* TODO: Add float f, e, E, g, G support. */
+				/* TODO: Add float e, E, g, G support. */
 				}
 				break;
 			} while (0);
 			break;
 		default:
-			++nformat;
+			++printf_nformat;
 			func(*format++);
 		}
 	}
-	return nformat;
+	return printf_nformat;
 }
 
 int fprintf(struct FILE* stream, const char* format, ...) {
@@ -418,7 +430,7 @@ int fgetc(struct FILE* stream) {
 	return fread(&ch, 1, 1, stream) == 1 ? ch : EOF;
 }
 
-char *fgets(char* s, int size, struct FILE* stream) {
+char* fgets(char* s, int size, struct FILE* stream) {
 	char* t = s;
 	--size;
 	while (size) {
@@ -437,6 +449,22 @@ char *fgets(char* s, int size, struct FILE* stream) {
 	return t;
 }
 
+char* gets(char* s) {
+	char* p = s;
+	for (;;) {
+		*s = fgetc(stdin);
+		if (*s == EOF) {
+			*s = 0;
+			return p == s ? NULL : p;
+		}
+		if (*s == '\n') {
+			*s = 0;
+			return p;
+		}
+		++s;
+	}
+}
+
 int fputc(int c, struct FILE* stream) {
 	return fwrite(&c, 1, 1, stream) == 1 ? c : EOF;
 }
@@ -444,4 +472,8 @@ int fputc(int c, struct FILE* stream) {
 int fputs(const char* s, struct FILE* stream) {
 	size_t l = strlen(s);
 	return fwrite(s, 1, l, stream) == l ? 0 : EOF;
+}
+
+int puts(const char* s) {
+	return fputs(s, stdout) == EOF ? EOF : fputc('\n', stdout);
 }

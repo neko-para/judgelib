@@ -1,6 +1,5 @@
-#include <math.h>
+#include <stdio.h>
 
 int main() {
-	fabs(1.0);
-	fabs(1.0f);
+	printf("%f", 5.678e10);
 }

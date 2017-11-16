@@ -81,6 +81,7 @@ _MATH_FUNC2_(pow)
 _MATH_FUNC_(sqrt)
 _MATH_FUNC_(ceil)
 _MATH_FUNC_(floor)
+_MATH_FUNC_(round)
 _MATH_FUNC2_(fmod)
 _MATH_FUNC_(fabs)
 
