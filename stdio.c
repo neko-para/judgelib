@@ -24,7 +24,7 @@ static size_t _cache_read(long fd, char* str, register size_t len) {
 	size_t i = 0;
 	for (i = 0; i < len; ++i) {
 		if (in_pos == in_size) {
-			in_size = syscall(__NR_read, 0, (long)in_buffer, 1 << 16);
+			in_size = syscall(__NR_read, fd, (long)in_buffer, 1 << 16);
 			if (!in_size) {
 				return i;
 			}
@@ -159,6 +159,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					break;
 				case 's': {
 					const char* str = va_arg(ap, const char*);
+					preci &= 0x7FFFFFFF;
 					while (*str && preci-- > 0) {
 						func(*str++);
 					}
@@ -384,8 +385,32 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 						flp = floor(flp / 10);
 					}
 					_reverse(temp + bs, temp + bs + preci);
+					width -= ip;
+					if (sign_type) {
+						--width;
+					}
+					if (!left_justify && fill == ' ') {
+						while (width--) {
+							func(' ');
+						}
+					}
+					if (value < 0) {
+						func('-');
+					} else if (sign_type) {
+						func(sign_type == 1 ? '+' : ' ');
+					}
+					if (!left_justify && fill == '0') {
+						while (width--) {
+							func('0');
+						}
+					}
 					for (i = 0; i < ip; ++i) {
 						func(temp[i]);
+					}
+					if (left_justify) {
+						while (width--) {
+							func(' ');
+						}
 					}
 					free(temp);
 					break;
@@ -441,7 +466,9 @@ int sprintf(char* str, const char* format, ...) {
 
 int vsprintf(char* str, const char* format, va_list ap) {
 	sprintf_ptr = str;
-	return _printf(_print_str, format, ap);
+	int ret = _printf(_print_str, format, ap);
+	*sprintf_ptr = 0;
+	return ret;
 }
 
 int fgetc(struct FILE* stream) {

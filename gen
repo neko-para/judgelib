@@ -6,7 +6,7 @@ BIT=$1
 if [ -z "$BIT" ]; then
 	BIT=64
 fi
-CFLAGS="$CFLAGS -fPIC -g -m$BIT -D_JUDGE_BIT_=$BIT"
+CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
 
 mkdir -p .build
 
@@ -17,45 +17,62 @@ for i in *.c; do
 done
 
 cat > Makefile << EOF
+BIT=${BIT}
 PREFIX=/usr/local/judgelib
 
-all: libjudge.so test
+all: Makefile libjudge.so test
+
+32:
+	@if [ \$(BIT) != 32 ]; then echo "Switch to 32 bit"; ./gen 32; fi
+	@make
+
+64:
+	@if [ \$(BIT) != 64 ]; then echo "Switch to 64 bit"; ./gen 64; fi
+	@make
 
 Makefile: gen
-	./gen
-	make
+	@./gen \$(BIT)
+	@make
 
 clean:
-	-rm -f libjudge.so
-	-rm -f ${SYSOBJ[@]} test crt.o
+	@-rm -f libjudge.so
+	@-rm -f ${SYSOBJ[@]} test crt.o
 
 install: all
-	mkdir -p \$(PREFIX)
-	mkdir -p \$(PREFIX)/include
-	mkdir -p \$(PREFIX)/lib
-	for i in *.h; do install \$\$i \$(PREFIX)/include/\$\$i; chmod 644 \$(PREFIX)/include/\$\$i; done
-	rm \$(PREFIX)/include/syscall.h
-	install crt.o \$(PREFIX)/lib/crt.o
-	install libjudge.so \$(PREFIX)/lib/libjudge.so
+	@echo "Make directory"
+	@mkdir -p \$(PREFIX)
+	@mkdir -p \$(PREFIX)/include
+	@mkdir -p \$(PREFIX)/lib
+	@echo "Install headers"
+	@for i in *.h; do install \$\$i \$(PREFIX)/include/\$\$i; chmod 644 \$(PREFIX)/include/\$\$i; done
+	@rm \$(PREFIX)/include/syscall.h
+	@echo "Install core library"
+	@install crt.o \$(PREFIX)/lib/crt.o
+	@install libjudge.so \$(PREFIX)/lib/libjudge.so
 
 crt.o: Makefile crt${BIT}.s
-	$AS -o crt.o crt${BIT}.s --${BIT}
+	@echo "Build crt.o"
+	@$AS -o crt.o crt${BIT}.s --${BIT} 2>> log
 
 test: Makefile test.cpp crt.o
-	$CC -o test test.cpp crt.o ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=. -fno-builtin-printf
+	@echo "Link test"
+	@$CC -o test test.cpp crt.o ${CFLAGS} ${LDFLAGS} -nostdlib -I. -L. -ljudge -Wl,--rpath=. -fno-builtin-printf 2>> log
 
 libjudge.so: ${SYSOBJ[@]}
-	$CC -shared -o libjudge.so ${SYSOBJ[@]} ${CFLAGS} ${LDFLAGS} -lm
+	@echo -e "\\rLink libjudge.so"
+	@$CC -shared -o libjudge.so ${SYSOBJ[@]} ${CFLAGS} ${LDFLAGS} -lm 2>> log
 
 EOF
-echo Building deps
+echo Build deps
 mkdir -p .build
 for i in ${SYS[@]}; do
-	echo Building $i deps
+	echo -n -e "\\rBuild $i deps     "
 	dep=(`\$CC -MM $i.c | sed 's/\\\\//' | sed 's/.*://'`)
 	cat >> Makefile << EOF
 .build/$i.o: ${dep[@]} Makefile
-	$CC -c -o .build/$i.o $i.c ${CFLAGS}
+	@echo -n "\\rBuild $i.o"
+	@$CC -c -o .build/$i.o $i.c ${CFLAGS} 2>> log
 
 EOF
 done
+echo -e "\\rBuild deps success"

@@ -276,6 +276,10 @@ void* realloc(void* ptr, size_t size) {
 				free(ptr);
 				return pn;
 			}
+		} else {
+			_SBRK(size - root->len);
+			root->len = size;
+			return ptr;
 		}
 	}
 }
@@ -373,7 +377,6 @@ void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const
 
 double atof(const char* str) {
 	register double ret = 0;
-	register double k = 0.1;
 	register int f = 1;
 	while (*str && isspace(*str)) {
 		++str;
