@@ -3,7 +3,7 @@ CC=gcc
 AS=as
 BIT=$1
 if [ -z "$BIT" ]; then
-	BIT=64
+	BIT=32
 fi
 CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
 

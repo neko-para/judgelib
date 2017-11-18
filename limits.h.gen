@@ -2,7 +2,7 @@
 CC=gcc
 BIT=$1
 if [ -z "$BIT" ]; then
-	BIT=64
+	BIT=32
 fi
 CFLAGS="$CFLAGS -m$BIT"
 
