@@ -77,6 +77,57 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
 	return nmemb;
 }
 
+static int scanf_nformat;
+static char fscanf_last;
+static struct FILE* fscanf_stream;
+static const char* sscanf_ptr;
+
+static char _scan_file() {
+	return fscanf_last = getc(fscanf_stream);
+}
+
+static void _scan_unget_file() {
+	ungetc(fscanf_last, fscanf_stream);
+}
+
+static char _scan_str() {
+	return *sscanf_ptr++;
+}
+
+static void _scan_unget_str() {
+	--sscanf_ptr;
+}
+
+static int _scanf(char (*fun_getc)(), void (*fun_unget)(), const char* format, va_list ap) {
+	
+}
+
+int fscanf(struct FILE* stream, const char* format, ...) {
+	va_list lst;
+	va_start(lst, format);
+	int ret = vfscanf(stream, format, lst);
+	va_end(lst);
+	return ret;
+}
+
+int vfscanf(struct FILE* stream, const char* format, va_list ap) {
+	fscanf_stream = stream;
+	return _scanf(_scan_file, _scan_unget_file, format, ap);
+}
+
+int sscanf(const char* str, const char* format, ...) {
+	va_list lst;
+	va_start(lst, format);
+	int ret = vsscanf(str, format, lst);
+	va_end(lst);
+	return ret;
+}
+
+int vsscanf(const char* str, const char* format, va_list ap) {
+	sscanf_ptr = str;
+	return _scanf(_scan_str, _scan_unget_str, format, ap);
+}
+
 static int printf_nformat;
 static struct FILE* fprintf_stream;
 static char* sprintf_ptr;
@@ -100,7 +151,7 @@ static void _reverse(register char* beg, register char* end) {
 	}
 }
 
-static int _printf(void (*func)(char), const char* format, va_list ap) {
+static int _printf(void (*fun_putc)(char), const char* format, va_list ap) {
 	int i;
 	printf_nformat = 0;
 	while (*format) {
@@ -109,7 +160,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 			++format;
 			if (*format == '%') {
 				++format;
-				func('%');
+				fun_putc('%');
 				break;
 			}
 			do {
@@ -180,13 +231,13 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 				}
 				switch(*format++) {
 				case 'c':
-					func((char)va_arg(ap, int));
+					fun_putc((char)va_arg(ap, int));
 					break;
 				case 's': {
 					const char* str = va_arg(ap, const char*);
 					preci &= 0x7FFFFFFF;
 					while (*str && preci-- > 0) {
-						func(*str++);
+						fun_putc(*str++);
 					}
 					break;
 				}
@@ -238,22 +289,22 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					_reverse(buf + signw, buf + pos);
 					i = 0;
 					if (fill == '0' && !isdigit(buf[0])) {
-						func(buf[0]);
+						fun_putc(buf[0]);
 						++i;
 					}
 					if (left_justify) {
 						for (; i < pos; ++i) {
-							func(buf[i]);
+							fun_putc(buf[i]);
 						}
 						while (width-- > pos) {
-							func(fill);
+							fun_putc(fill);
 						}
 					} else {
 						while (width-- > pos) {
-							func(fill);
+							fun_putc(fill);
 						}
 						for (; i < pos; ++i) {
-							func(buf[i]);
+							fun_putc(buf[i]);
 						}
 					}
 					break;
@@ -277,13 +328,13 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					width -= 2;
 					if (fill == ' ') {
 						while (width-- > pos) {
-							func(' ');
+							fun_putc(' ');
 						}
 					}
-					func('0');
-					func('x');
+					fun_putc('0');
+					fun_putc('x');
 					for (i = 0; i < pos; ++i) {
-						func(buf[i]);
+						fun_putc(buf[i]);
 					}
 					break;
 
@@ -350,29 +401,29 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					}
 					if (fill == ' ' && !left_justify) {
 						while (width-- > pos) {
-							func(' ');
+							fun_putc(' ');
 						}
 					}
 					switch(radix) {
 					case 8:
-						func('0');
+						fun_putc('0');
 						break;
 					case 16:
-						func('0');
-						func(upp ? 'X' : 'x');
+						fun_putc('0');
+						fun_putc(upp ? 'X' : 'x');
 						break;
 					}
 					if (fill == '0' && !left_justify) {
 						while (width-- > pos) {
-							func('0');
+							fun_putc('0');
 						}
 					}
 					for (i = 0; i < pos; ++i) {
-						func(buf[i]);
+						fun_putc(buf[i]);
 					}
 					if (left_justify) {
 						while (width-- > pos) {
-							func(fill);
+							fun_putc(fill);
 						}
 					}
 					break;
@@ -416,25 +467,25 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 					}
 					if (!left_justify && fill == ' ') {
 						while (width--) {
-							func(' ');
+							fun_putc(' ');
 						}
 					}
 					if (value < 0) {
-						func('-');
+						fun_putc('-');
 					} else if (sign_type) {
-						func(sign_type == 1 ? '+' : ' ');
+						fun_putc(sign_type == 1 ? '+' : ' ');
 					}
 					if (!left_justify && fill == '0') {
 						while (width--) {
-							func('0');
+							fun_putc('0');
 						}
 					}
 					for (i = 0; i < ip; ++i) {
-						func(temp[i]);
+						fun_putc(temp[i]);
 					}
 					if (left_justify) {
 						while (width--) {
-							func(' ');
+							fun_putc(' ');
 						}
 					}
 					free(temp);
@@ -447,7 +498,7 @@ static int _printf(void (*func)(char), const char* format, va_list ap) {
 			break;
 		default:
 			++printf_nformat;
-			func(*format++);
+			fun_putc(*format++);
 		}
 	}
 	return printf_nformat;
@@ -467,24 +518,10 @@ int vfprintf(struct FILE* stream, const char* format, va_list ap) {
 	return _printf(_print_file, format, ap);
 }
 
-int printf(const char* format, ...) {
-	va_list ap;
-	int ret;
-	va_start(ap, format);
-	ret = vprintf(format, ap);
-	va_end(ap);
-	return ret;
-}
-
-int vprintf(const char* format, va_list ap) {
-	return vfprintf(stdout, format, ap);
-}
-
 int sprintf(char* str, const char* format, ...) {
 	va_list ap;
-	int ret;
 	va_start(ap, format);
-	ret = vsprintf(str, format, ap);
+	int ret = vsprintf(str, format, ap);
 	va_end(ap);
 	return ret;
 }

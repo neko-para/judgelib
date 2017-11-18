@@ -20,13 +20,17 @@ int fflush(struct FILE* stream);
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream);
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream);
 
-int scanf(const char* format, ...);
+int fscanf(struct FILE* stream, const char* format, ...);
+int vfscanf(struct FILE* stream, const char* format, va_list ap);
+#define scanf(...) fscanf(stdout, __VA_ARGS__)
+#define vscanf(...) vfscanf(stdout, __VA_ARGS__)
 int sscanf(const char* str, const char* format, ...);
+int vsscanf(const char* str, const char* format, va_list ap);
 
 int fprintf(struct FILE* stream, const char* format, ...);
 int vfprintf(struct FILE* stream, const char* format, va_list ap);
-int printf(const char* format, ...);
-int vprintf(const char* format, va_list ap);
+#define printf(...) fprintf(stdout, __VA_ARGS__)
+#define vprintf(...) vfprintf(stdout, __VA_ARGS__)
 int sprintf(char* str, const char* format, ...);
 int vsprintf(char* str, const char* format, va_list ap);
 
@@ -40,6 +44,7 @@ int fputs(const char* s, struct FILE* stream);
 #define putc(c, f) fputc(c, f)
 #define putchar(c) fputc(c, stdout);
 int puts(const char* s);
+int ungetc(int c, struct FILE* stream);
 
 #ifdef __cplusplus
 }
