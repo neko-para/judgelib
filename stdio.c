@@ -1,15 +1,18 @@
 #include "stdio.h"
 #include "string.h"
+#include "assert.h"
 #include "stdlib.h"
 #include "ctype.h"
 #include "math.h"
+#include "limits.h"
+#include <sys/stat.h> // For struct stat
 #include "syscall.h"
 
 static char out_buffer[3][1 << 16];
 static size_t out_pos[3];
-static char in_buffer[1 << 16];
-static size_t in_pos, in_size, in_filepos, in_filesize;
-static char unget;
+static char* in_buffer;
+static size_t in_pos, in_size;
+static char unget = EOF;
 
 static void _cache_write(long fd, const char* str, register size_t len) {
 	while (len--) {
@@ -22,51 +25,33 @@ static void _cache_write(long fd, const char* str, register size_t len) {
 }
 
 static size_t _cache_read(long fd, char* str, register size_t len) {
-	size_t l = len;
-	size_t ug = 0;
+	size_t i = 0;
 	if (unget != EOF) {
 		*str++ = unget;
 		unget = EOF;
 		--len;
-		ug = 1;
+		++i;
 	}
-	if (len > in_filesize - in_filepos) {
-		len = in_filesize - in_filepos;
-		in_filepos += len;
-		l = len + ug;
+	while (len-- && in_pos < in_size) {
+		*str++ = in_buffer[in_pos++];
+		++i;
 	}
-	if (in_pos + len <= in_size) {
-		memcpy(str, in_buffer + in_pos, len);
-		in_pos += len;
-		return l;
-	}
-	memcpy(str, in_buffer + in_pos, in_size - in_pos);
-	len -= in_size - in_pos;
-	in_pos = 0;
-	while (len >> 16) {
-		syscall(__NR_read, fd, (long)str, 1 << 16);
-		str += 1 << 16;
-		len -= 1 << 16;
-	}
-	in_size = syscall(__NR_read, fd, (long)in_buffer[fd], 1 << 16);
-	memcpy(str, in_buffer, len);
-	in_pos = len;
-	return l;
+	return i;
 }
 
 int fflush(struct FILE* stream) {
 	long fd = ((long)stream);
 	if (stream) {
-		syscall(__NR_write, fd, (long)out_buffer[fd], 1 << 16);
+		syscall(__NR_write, fd, (long)out_buffer[fd], out_pos[fd]);
 		out_pos[fd] = 0;
 	}
-	return syscall(__NR_fsync, fd, 0, 0);
+	return 0;
 }
 
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	size_t valid = (in_filesize - in_filepos + unget != EOF) / size;
-	if (nmemb > size) {
-		nmemb = size;
+	size_t valid = (in_size - in_pos + (unget != EOF)) / size;
+	if (nmemb > valid) {
+		nmemb = valid;
 	}
 	_cache_read((long)stream, ptr, size * nmemb);
 	return nmemb;
@@ -99,7 +84,152 @@ static void _scan_unget_str() {
 }
 
 static int _scanf(char (*fun_getc)(), void (*fun_unget)(), const char* format, va_list ap) {
-	
+	while (*format) {
+		if (isspace(*format)) {
+			while (isspace(fun_getc())) {}
+			fun_unget();
+			++format;
+		} else if (*format == '%') {
+			if (*++format == '%') {
+				if (fun_getc() != '%') {
+					return scanf_nformat;
+				} else {
+					++format;
+				}
+			} else {
+				int ignore = 0;
+				long maxi_read = LLONG_MAX;
+				if (*format == '*') {
+					ignore = 1;
+					++format;
+				}
+				if (isdigit(*format)) {
+					maxi_read = 0;
+					while (isdigit(*format)) {
+						maxi_read = ((maxi_read + (maxi_read << 2)) << 1) + (*format++ ^ '0');
+					}
+				}
+				int length = 0;
+				/* 0: int 1: long 2: long double 3: long long */
+				if (*format == 'l') {
+					++format;
+					if (*format == 'l') {
+						++format;
+						length = 3;
+					} else {
+						length = 1;
+					}
+				} else if (*format == 'L') {
+					++format;
+					length = 2;
+				}
+				switch(*format++) {
+				case 'i': {
+					register long long num = 0;
+					int f = 1;
+					do {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+						char c = fun_getc();
+						--maxi_read;
+						if (c == '+' || c == '-') {
+							if (maxi_read <= 0) {
+								return scanf_nformat;
+							}
+							f = (c == '-' ? -1 : 1);
+							c = fun_getc();
+							--maxi_read;
+						}
+						if (!isdigit(c)) {
+							return scanf_nformat;
+						}
+						if (c == '0') {
+							if (maxi_read == 0) {
+								break;
+							}
+							c = fun_getc();
+							--maxi_read;
+							if (toupper(c) == 'X') {
+								if (maxi_read == 0) {
+									break;
+								}
+								c = fun_getc();
+								--maxi_read;
+								if (!isxdigit(c)) {
+									fun_unget();
+									break;
+								} else {
+									num = (isdigit(c) ? c ^ '0' : (toupper(c) - 'A' + 10));
+								}
+								do {
+									c = fun_getc();
+									if (!maxi_read-- || !isxdigit(c)) {
+										break;
+									}
+									num <<= 4;
+									num += (isdigit(c) ? c ^ '0' : (toupper(c) - 'A' + 10));
+								} while (1);
+								fun_unget();
+							} else if (isdigit(c)) {
+								if ((c ^ '0') >= 8) {
+									num = 0;
+									break;
+								} else {
+									num = c ^ '0';
+								}
+								if (!maxi_read) {
+									break;
+								}
+								do {
+									c = fun_getc();
+									if (!maxi_read-- || !(isdigit(c) && (c ^ '0') < 8)) {
+										break;
+									}
+									num <<= 3;
+									num += c ^ '0';
+								} while (1);
+								fun_unget();
+							}
+						} else {
+							num = (c ^ '0');
+							do {
+								c = fun_getc();
+								if (!maxi_read-- || !isdigit(c)) {
+									break;
+								}
+								num = ((num + (num << 2)) << 1) + (c ^ '0');
+							} while (1);
+							fun_unget();
+						}
+					} while (0);
+					++scanf_nformat;
+					if (!ignore) {
+						num *= f;
+						switch(length) {
+						case 0:
+							*va_arg(ap, int*) = num;
+							break;
+						case 1:
+							*va_arg(ap, long*) = num;
+							break;
+						case 3:
+							*va_arg(ap, long long*) = num;
+							break;
+						}
+					}
+					break;
+				}
+				}
+			}
+		} else {
+			if (fun_getc() != *format) {
+				return scanf_nformat;
+			} else {
+				++format;
+			}
+		}
+	}
+	return scanf_nformat;
 }
 
 int fscanf(struct FILE* stream, const char* format, ...) {
@@ -172,7 +302,6 @@ static int _printf(void (*fun_putc)(char), const char* format, va_list ap) {
 				int preci = -1;
 				int length = 0;
 				/* 0: int 1: short 2: long 3: long double 4: long long */
-				/* Yes, we support long long, because it's very useful. */
 				int step = 0;
 				while (step == 0) {
 					switch(*format++) {
@@ -235,7 +364,7 @@ static int _printf(void (*fun_putc)(char), const char* format, va_list ap) {
 					break;
 				case 's': {
 					const char* str = va_arg(ap, const char*);
-					preci &= 0x7FFFFFFF;
+					preci &= INT_MAX; /* Make -1 to INT_MAX */
 					while (*str && preci-- > 0) {
 						fun_putc(*str++);
 					}
@@ -534,8 +663,8 @@ int vsprintf(char* str, const char* format, va_list ap) {
 }
 
 int fgetc(struct FILE* stream) {
-	char ch;
-	return fread(&ch, 1, 1, stream) == 1 ? ch : EOF;
+	char ch = EOF;
+	return _cache_read((long)stream, &ch, 1) == 1 ? ch : EOF;
 }
 
 char* fgets(char* s, int size, struct FILE* stream) {
@@ -592,14 +721,9 @@ int ungetc(int c, struct FILE* stream) {
 }
 
 void __judge_lib_init_stdio() {
-#if _JUDGE_BIT_ == 32
-	char st[88];
-	syscall(__NR_fstat, (long)0, (long)&st);
-	in_filesize = (long)(st + 44);
-#else
-	char st[144];
-	syscall(__NR_fstat, (long)0, (long)&st);
-	in_filesize = (long)(st + 48);
-#endif
-
+	struct stat st;
+	syscall(__NR_fstat, 0, (long)&st);
+	in_size = st.st_size;
+	in_buffer = (char*)malloc(in_size);
+	assert(in_size == syscall(__NR_read, 0, (long)in_buffer, in_size));
 }

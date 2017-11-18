@@ -22,8 +22,8 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream);
 
 int fscanf(struct FILE* stream, const char* format, ...);
 int vfscanf(struct FILE* stream, const char* format, va_list ap);
-#define scanf(...) fscanf(stdout, __VA_ARGS__)
-#define vscanf(...) vfscanf(stdout, __VA_ARGS__)
+#define scanf(...) fscanf(stdin, __VA_ARGS__)
+#define vscanf(...) vfscanf(stdin, __VA_ARGS__)
 int sscanf(const char* str, const char* format, ...);
 int vsscanf(const char* str, const char* format, va_list ap);
 
