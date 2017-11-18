@@ -5,7 +5,7 @@ BIT=$1
 if [ -z "$BIT" ]; then
 	BIT=32
 fi
-CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT -Ofast"
+CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
 
 
 if [ ! -d .git ]; then

@@ -10,8 +10,8 @@
 
 static char out_buffer[3][1 << 16];
 static size_t out_pos[3];
-static char* in_buffer;
-static size_t in_pos, in_size;
+static char in_buffer[1 << 16];
+static size_t in_pos, in_size, in_file_size;
 static char unget = EOF;
 
 static void _cache_write(long fd, const char* str, register size_t len) {
@@ -24,7 +24,7 @@ static void _cache_write(long fd, const char* str, register size_t len) {
 	}
 }
 
-static size_t _cache_read(long fd, char* str, register size_t len) {
+static size_t _cache_read(long fd, char* str, register long len) {
 	size_t i = 0;
 	if (unget != EOF) {
 		*str++ = unget;
@@ -32,9 +32,21 @@ static size_t _cache_read(long fd, char* str, register size_t len) {
 		--len;
 		++i;
 	}
-	while (len-- && in_pos < in_size) {
-		*str++ = in_buffer[in_pos++];
-		++i;
+	if (len > in_file_size + in_size - in_pos) {
+		len = in_file_size + in_size - in_pos;
+	}
+	while (len > 0) {
+		while (in_pos < in_size && len--) {
+			*str++ = in_buffer[in_pos++];
+			++i;
+		}
+		if (in_pos == in_size) {
+			int l = in_file_size >> 16 ? (1 << 16) : in_file_size;
+			syscall(__NR_read, fd, in_buffer, l);
+			in_size = l;
+			in_pos = 0;
+			in_file_size -= l;
+		}
 	}
 	return i;
 }
@@ -723,7 +735,5 @@ int ungetc(int c, struct FILE* stream) {
 void __judge_lib_init_stdio() {
 	struct stat st;
 	syscall(__NR_fstat, 0, (long)&st);
-	in_size = st.st_size;
-	in_buffer = (char*)malloc(in_size);
-	assert(in_size == syscall(__NR_read, 0, (long)in_buffer, in_size));
+	in_file_size = st.st_size;
 }

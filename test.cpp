@@ -1,9 +1,13 @@
-#include <sys/stat.h>
-#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main() {
-	struct stat st;
-	fstat(0, &st);
-	printf("%ld %ld", sizeof(struct stat), offsetof(struct stat, st_size));
+	int sum = 0;
+	int x;
+	for (int i = 0; i < 5000000; ++i) {
+		scanf("%i", &x);
+		sum += x;
+		// printf("%d ", i);
+	}
+	return 0;
 }
