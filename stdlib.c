@@ -143,7 +143,9 @@ static Splay* FindFirstValid(Splay* p, size_t l) {
 }
 
 static void FixAlign(size_t* l) {
-	if (*l & 3) {
+	if (!*l) {
+		*l = 4;
+	} else if (*l & 3) {
 		*l += 4 - (*l & 3);
 	}
 }
@@ -302,7 +304,7 @@ void exit(int status) {
 }
 
 void _exit(int status) {
-	syscall(__NR_exit, status, 0, 0);
+	syscall(__NR_exit, status);
 }
 
 int abs(int n) {
