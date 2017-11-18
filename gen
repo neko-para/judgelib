@@ -5,7 +5,7 @@ BIT=$1
 if [ -z "$BIT" ]; then
 	BIT=32
 fi
-CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
+CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT -Ofast"
 
 
 if [ ! -d .git ]; then
@@ -26,7 +26,7 @@ cat > Makefile << EOF
 BIT=${BIT}
 PREFIX=/usr/local/judgelib
 
-all: Makefile libjudge.so crt.o
+all: Makefile libjudge.so crt.o test
 
 32:
 	@if [ \$(BIT) != 32 ]; then echo "Switch to 32 bit"; ./gen 32; fi
