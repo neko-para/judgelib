@@ -5,3 +5,5 @@ Makefile
 *.o
 test
 log
+float.h
+limits.h

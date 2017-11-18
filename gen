@@ -1,18 +1,18 @@
 #!/bin/bash
+CC=gcc
+AS=as
+BIT=$1
+if [ -z "$BIT" ]; then
+	BIT=64
+fi
+CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
+
+
 if [ ! -d .git ]; then
 	git clone https://github.com/neko-para/judgelib.git
 	cd judgelib
 	exec bash gen
 fi
-
-CC=gcc
-AS=as
-BIT=$1
-
-if [ -z "$BIT" ]; then
-	BIT=64
-fi
-CFLAGS="$CFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
 
 mkdir -p .build
 
@@ -82,7 +82,11 @@ help:
 	@echo "make help -> Show this help"
 
 EOF
-echo Build deps
+for i in *.h.gen; do
+	echo -n -e "\\rGenerate ${i::-4}"
+	./$i $BIT
+done
+echo -e "\\nBuild deps"
 mkdir -p .build
 for i in ${SYS[@]}; do
 	echo -n -e "\\rBuild $i deps     "
