@@ -9,6 +9,7 @@ static char out_buffer[3][1 << 16];
 static size_t out_pos[3];
 static char in_buffer[1 << 16];
 static size_t in_pos, in_size;
+static char unget;
 
 static void _cache_write(long fd, const char* str, register size_t len) {
 	while (len--) {
@@ -22,6 +23,11 @@ static void _cache_write(long fd, const char* str, register size_t len) {
 
 static size_t _cache_read(long fd, char* str, register size_t len) {
 	size_t i = 0;
+	if (unget != EOF) {
+		*str++ = unget;
+		unget = EOF;
+		--len;
+	}
 	for (i = 0; i < len; ++i) {
 		if (in_pos == in_size) {
 			in_size = syscall(__NR_read, fd, (long)in_buffer, 1 << 16);
@@ -472,7 +478,7 @@ int vsprintf(char* str, const char* format, va_list ap) {
 }
 
 int fgetc(struct FILE* stream) {
-	unsigned char ch;
+	char ch;
 	return fread(&ch, 1, 1, stream) == 1 ? ch : EOF;
 }
 
@@ -522,4 +528,9 @@ int fputs(const char* s, struct FILE* stream) {
 
 int puts(const char* s) {
 	return fputs(s, stdout) == EOF ? EOF : fputc('\n', stdout);
+}
+
+int ungetc(int c, struct FILE* stream) {
+	unget = c;
+	return c;
 }

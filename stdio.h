@@ -32,9 +32,13 @@ int vsprintf(char* str, const char* format, va_list ap);
 
 int fgetc(struct FILE* stream);
 char* fgets(char* s, int size, struct FILE* stream);
+#define getc(f) fgetc(f)
+#define getchar() fgetc(stdin)
 char* gets(char* s);
 int fputc(int c, struct FILE* stream);
 int fputs(const char* s, struct FILE* stream);
+#define putc(c, f) fputc(c, f)
+#define putchar(c) fputc(c, stdout);
 int puts(const char* s);
 
 #ifdef __cplusplus
