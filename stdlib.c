@@ -313,12 +313,20 @@ long labs(long n) {
 	return n < 0 ? -n : n;
 }
 
+long long llabs(long long n) {
+	return n < 0 ? -n : n;
+}
+
 div_t div(int numerator, int denominator) {
 	return (div_t){numerator / denominator, numerator % denominator};
 }
 
 ldiv_t ldiv(long numerator, long denominator) {
 	return (ldiv_t){numerator / denominator, numerator % denominator};
+}
+
+lldiv_t lldiv(long long numerator, long long denominator) {
+	return (lldiv_t){numerator / denominator, numerator % denominator};
 }
 
 void* bsearch(const void* key, const void* base, size_t num, size_t size, int (*compar)(const void*, const void*)) {

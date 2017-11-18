@@ -4,6 +4,8 @@
 #include <stddef.h>
 
 #define RAND_MAX 32768
+#define EXIT_FAILURE 1
+#define EXIT_SUCCESS 0
 
 typedef struct {
 	int quot;
@@ -14,6 +16,11 @@ typedef struct {
 	long quot;
 	long rem;
 } ldiv_t;
+
+typedef struct {
+	long long quot;
+	long long rem;
+} lldiv_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +35,10 @@ void exit(int status) __attribute__ ((__noreturn__));
 void _exit(int status) __attribute__ ((__noreturn__));
 int abs(int n);
 long labs(long n);
+long long llabs(long long n);
 div_t div(int numerator, int denominator);
 ldiv_t ldiv(long numerator, long denominator);
+lldiv_t lldiv(long long numerator, long long denominator);
 void* bsearch(const void* key, const void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
 void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
 #define atof(str) ((float)strtod(str, NULL))
