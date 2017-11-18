@@ -375,70 +375,122 @@ void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const
 	qsort(same, num + 1 - (same - base) / size, size, compar);
 }
 
-double atof(const char* str) {
-	register double ret = 0;
+long double strtold(const char* str, char** endptr) {
+	register long double ret = 0;
 	register int f = 1;
-	while (*str && isspace(*str)) {
+	while (isspace(*str)) {
 		++str;
 	}
 	if (*str == '+' || *str == '-') {
-		f = (*str == '-') ? -1 : 1;
-		++str;
+		f = (*str++ == '-') ? -1 : 1;
 	}
-	while (*str && isdigit(*str)) {
+	while ( isdigit(*str)) {
 		ret = ret * 10 + (*str++ ^ '0');
 	}
 	if (*str == '.') {
-		double flt = 0;
+		long double flt = 0;
 		const char* p = ++str;
-		while (*str && isdigit(*str)) {
+		while (isdigit(*str)) {
 			flt += flt * 10 + (*str++ ^ '0');
 		}
-		ret += flt * pow(10, -(long)(str - p));
+		ret += flt * powl(10, -(long)(str - p));
 	}
 	if (*str == 'e' || *str == 'E') {
 		++str;
 		register long i = 0;
-		while (*str && isdigit(*str)) {
+		while (isdigit(*str)) {
 			i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
 		}
-		ret *= pow(10, i);
+		ret *= powl(10, i);
+	}
+	if (endptr) {
+		*endptr = (char*)str;
 	}
 	return ret * f;
 }
 
-int atoi(const char* str) {
-	register int i = 0;
+long long atoll(const char* str) {
+	register long long i = 0;
 	register int f = 1;
-	while (*str && isspace(*str)) {
+	while (isspace(*str)) {
 		++str;
 	}
 	if (*str == '+' || *str == '-') {
-		f = (*str == '-') ? -1 : 1;
-		++str;
+		f = (*str++ == '-') ? -1 : 1;
 	}
-	while (*str && isdigit(*str)) {
+	while (isdigit(*str)) {
 		i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
 	}
 	return i * f;
 }
 
-long atol(const char* str) {
-	register long i = 0;
+long long strtoll(const char* str, char** endptr, int base) {
+	register long long i = 0;
 	register int f = 1;
-	while (*str && isspace(*str)) {
+	while (isspace(*str)) {
 		++str;
 	}
 	if (*str == '+' || *str == '-') {
-		f = (*str == '-') ? -1 : 1;
-		++str;
+		f = (*str++ == '-') ? -1 : 1;
 	}
-	while (*str && isdigit(*str)) {
-		i = ((i + (i << 2)) << 1) + (*str++ ^ '0');
+	if (base == 0 || base == 16) {
+		if (str[0] == '0' && tolower(str[1]) == 'x') {
+			str += 2;
+			base = 16;
+		}
+	}
+	if (base == 0 || base == 8) {
+		if (str[0] == '0' && isdigit(str[1])) {
+			++str;
+			base = 8;
+		}
+	}
+	if (base <= 10) {
+		while (isdigit(*str) && (*str ^ '0') < base) {
+			i = i * base + (*str++ ^ '0');
+		}
+	} else {
+		while (isalnum(*str) && toupper(*str) - 'A' + 10 < base) {
+			i = i * base + (isdigit(*str) ? (*str++ ^ '0') : (*str - 'A' + 10));
+		}
+	}
+	if (endptr) {
+		*endptr = (char*)str;
 	}
 	return i * f;
 }
 
+unsigned long long strtoull(const char* str, char** endptr, int base) {
+	register unsigned long long i = 0;
+	while (isspace(*str)) {
+		++str;
+	}
+	if (base == 0 || base == 16) {
+		if (str[0] == '0' && tolower(str[1]) == 'x') {
+			str += 2;
+			base = 16;
+		}
+	}
+	if (base == 0 || base == 8) {
+		if (str[0] == '0' && isdigit(str[1])) {
+			++str;
+			base = 8;
+		}
+	}
+	if (base <= 10) {
+		while (isdigit(*str) && (*str ^ '0') < base) {
+			i = i * base + (*str++ ^ '0');
+		}
+	} else {
+		while (isalnum(*str) && toupper(*str) - 'A' + 10 < base) {
+			i = i * base + (isdigit(*str) ? (*str++ ^ '0') : (*str - 'A' + 10));
+		}
+	}
+	if (endptr) {
+		*endptr = (char*)str;
+	}
+	return i;
+}
 void __judge_lib_init() {
 	ptr = (void*)syscall(__NR_brk, 0, 0, 0);
 	root = _SBRK(sizeof(Splay));

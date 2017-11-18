@@ -32,10 +32,17 @@ div_t div(int numerator, int denominator);
 ldiv_t ldiv(long numerator, long denominator);
 void* bsearch(const void* key, const void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
 void qsort(void* base, size_t num, size_t size, int (*compar)(const void*, const void*));
-double atof(const char* str);
-int atoi(const char* str);
-long atol(const char* str);
-
+#define atof(str) ((float)strtod(str, NULL))
+#define atoi(str) ((int)atoll(str))
+#define atol(str) ((int)atoll(str))
+long long atoll(const char* str);
+#define strtof(str, end) ((float)strtold(str, end))
+#define strtod(str, end) ((double)strtold(str, end))
+long double strtold(const char* str, char** endptr);
+#define strtol(str, end, base) ((long)strtoll(str, end, base))
+long long strtoll(const char* str, char** endptr, int base);
+#define strtoul(str, end, base) ((unsigned long)strtoull(str, end, base))
+unsigned long long strtoull(const char* str, char** endptr, int base);
 #ifdef __cplusplus
 }
 #endif
