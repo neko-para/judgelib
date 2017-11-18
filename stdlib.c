@@ -499,7 +499,8 @@ unsigned long long strtoull(const char* str, char** endptr, int base) {
 	}
 	return i;
 }
-void __judge_lib_init() {
+
+void __judge_lib_init_stdlib() {
 	ptr = (void*)syscall(__NR_brk, 0, 0, 0);
 	root = _SBRK(sizeof(Splay));
 	Init(root, NULL, 0);

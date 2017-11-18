@@ -8,7 +8,7 @@
 static char out_buffer[3][1 << 16];
 static size_t out_pos[3];
 static char in_buffer[1 << 16];
-static size_t in_pos, in_size;
+static size_t in_pos, in_size, in_filepos, in_filesize;
 static char unget;
 
 static void _cache_write(long fd, const char* str, register size_t len) {
@@ -22,22 +22,36 @@ static void _cache_write(long fd, const char* str, register size_t len) {
 }
 
 static size_t _cache_read(long fd, char* str, register size_t len) {
-	size_t i = 0;
+	size_t l = len;
+	size_t ug = 0;
 	if (unget != EOF) {
 		*str++ = unget;
 		unget = EOF;
 		--len;
+		ug = 1;
 	}
-	for (i = 0; i < len; ++i) {
-		if (in_pos == in_size) {
-			in_size = syscall(__NR_read, fd, (long)in_buffer, 1 << 16);
-			if (!in_size) {
-				return i;
-			}
-		}
-		*str++ = in_buffer[in_pos++];
+	if (len > in_filesize - in_filepos) {
+		len = in_filesize - in_filepos;
+		in_filepos += len;
+		l = len + ug;
 	}
-	return i;
+	if (in_pos + len <= in_size) {
+		memcpy(str, in_buffer + in_pos, len);
+		in_pos += len;
+		return l;
+	}
+	memcpy(str, in_buffer + in_pos, in_size - in_pos);
+	len -= in_size - in_pos;
+	in_pos = 0;
+	while (len >> 16) {
+		syscall(__NR_read, fd, (long)str, 1 << 16);
+		str += 1 << 16;
+		len -= 1 << 16;
+	}
+	in_size = syscall(__NR_read, fd, (long)in_buffer[fd], 1 << 16);
+	memcpy(str, in_buffer, len);
+	in_pos = len;
+	return l;
 }
 
 int fflush(struct FILE* stream) {
@@ -50,8 +64,13 @@ int fflush(struct FILE* stream) {
 }
 
 size_t fread(void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
-	return _cache_read((long)stream, ptr, size * nmemb) / nmemb;
-} // TODO: Try to fix the problem of the rest size.
+	size_t valid = (in_filesize - in_filepos + unget != EOF) / size;
+	if (nmemb > size) {
+		nmemb = size;
+	}
+	_cache_read((long)stream, ptr, size * nmemb);
+	return nmemb;
+}
 
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, struct FILE* stream) {
 	_cache_write((long)stream, ptr, size * nmemb);
@@ -533,4 +552,17 @@ int puts(const char* s) {
 int ungetc(int c, struct FILE* stream) {
 	unget = c;
 	return c;
+}
+
+void __judge_lib_init_stdio() {
+#if _JUDGE_BIT_ == 32
+	char st[88];
+	syscall(__NR_fstat, (long)0, (long)&st);
+	in_filesize = (long)(st + 44);
+#else
+	char st[144];
+	syscall(__NR_fstat, (long)0, (long)&st);
+	in_filesize = (long)(st + 48);
+#endif
+
 }

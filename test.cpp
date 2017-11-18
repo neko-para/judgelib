@@ -1,5 +1,9 @@
-#include <stdlib.h>
+#include <sys/stat.h>
+#include <stddef.h>
+#include <stdio.h>
 
 int main() {
-	exit(EXIT_FAILURE);
+	struct stat st;
+	fstat(0, &st);
+	printf("%ld %ld", sizeof(struct stat), offsetof(struct stat, st_size));
 }
