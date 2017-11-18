@@ -304,7 +304,7 @@ void exit(int status) {
 }
 
 void _exit(int status) {
-	syscall(__NR_exit, status);
+	syscall(__NR_exit, status, 0, 0);
 }
 
 int abs(int n) {

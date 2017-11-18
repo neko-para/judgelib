@@ -42,7 +42,7 @@ static size_t _cache_read(long fd, char* str, register long len) {
 		}
 		if (in_pos == in_size) {
 			int l = in_file_size >> 16 ? (1 << 16) : in_file_size;
-			syscall(__NR_read, fd, in_buffer, l);
+			syscall(__NR_read, fd, (long)in_buffer, l);
 			in_size = l;
 			in_pos = 0;
 			in_file_size -= l;
@@ -734,6 +734,6 @@ int ungetc(int c, struct FILE* stream) {
 
 void __judge_lib_init_stdio() {
 	struct stat st;
-	syscall(__NR_fstat, 0, (long)&st);
+	syscall(__NR_fstat, 0, (long)&st, 0);
 	in_file_size = st.st_size;
 }
