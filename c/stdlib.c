@@ -171,10 +171,10 @@ void* malloc(size_t size) {
 }
 
 void free(void* ptr) {
-	Splay* p = CheckValid(root, ptr - sizeof(Splay));
-	if (!p) {
+	if (!ptr) {
 		return;
 	}
+	Splay* p = CheckValid(root, ptr - sizeof(Splay));
 	SplayTo(p, &root);
 	root->use = 0;
 	Update(root);
