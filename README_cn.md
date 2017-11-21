@@ -6,8 +6,6 @@
 
 数学库没有实现, 而是直接使用libm.a.
 
-你可以直接分发gen文件, 它将会使用git从github上下载代码.
-
 ## 构建
 
 你需要GNU bash, gcc和GNU make来编译这个库.
@@ -23,7 +21,7 @@
 为了使用这个库, 这样编译代码:
 
 ```shell
-gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib -lm
+g++ test.cpp -o test -I${PREFIX}/include -I{PREFIX}/include/c++ -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib -lm
 ```
 
 ${PREFIX}是库的安装目录.

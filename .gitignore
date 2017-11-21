@@ -1,10 +1,8 @@
-.build
 .vscode
-Makefile
-*.so
-*.o
-test
-log
-float.h
-limits.h
-input
+*/.build
+*/Makefile
+*/*.so
+*/*.o
+*/log
+c/float.h
+c/limits.h

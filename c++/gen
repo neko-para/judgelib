@@ -1,0 +1,84 @@
+#!/bin/bash -x
+CXX=g++
+AS=as
+BIT=$1
+if [ -z "$BIT" ]; then
+	BIT=32
+fi
+CXXFLAGS="$CXXFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT -I../c"
+
+mkdir -p .build
+
+for i in *.cpp; do
+	j=$(echo $i | sed 's/\.cpp//')
+	SYS=("${SYS[@]}" "$j")
+	SYSOBJ=("${SYSOBJ[@]}" ".build/$j.o")
+done
+
+cat > Makefile << EOF
+BIT=${BIT}
+PREFIX=/usr/local/judgelib
+
+all: Makefile libjudgecxx.so
+
+32:
+	@if [ \$(BIT) != 32 ]; then echo "Switch to 32 bit"; ./gen 32; fi
+	@make
+
+64:
+	@if [ \$(BIT) != 64 ]; then echo "Switch to 64 bit"; ./gen 64; fi
+	@make
+
+Makefile: gen
+	@./gen \$(BIT)
+	@make
+
+clean:
+	@-rm -f libjudgecxx.so
+	@-rm -f ${SYSOBJ[@]}
+
+install: all
+	@echo "Make directory"
+	@mkdir -p \$(PREFIX)
+	@mkdir -p \$(PREFIX)/include
+	@mkdir -p \$(PREFIX)/lib
+	@echo "Install headers"
+	@cp -r c++ \$(PREFIX)/include
+	@chmod -R 644 \$(PREFIX)/include/c++
+	@echo "Install core library"
+	@install libjudgecxx.so \$(PREFIX)/lib/libjudgecxx.so
+
+libjudgecxx.so: ${SYSOBJ[@]}
+	@echo -e "\\rLink libjudge.so"
+	@$CXX -shared -o libjudgecxx.so ${SYSOBJ[@]} ${CXXFLAGS} ${LDFLAGS} -lm 2>> log
+
+update:
+	@if [ -d .git ]; then git pull; fi
+
+help:
+	@echo "make all -> Build libjudge.so & crt.o (default)"
+	@echo "make clean -> Clean objects & libraries"
+	@echo "make install -> Install librarys to ${PREFIX}"
+	@echo "make 32 -> Specify to build 32 version"
+	@echo "make 64 -> Specify to build 64 version"
+	@echo "make update -> Update the source (need git)"
+	@echo "make help -> Show this help"
+
+EOF
+# for i in *.h.gen; do
+	# echo -n -e "\\rGenerate ${i::-4}"
+	# ./$i $BIT
+# done
+echo -e "\\nBuild deps"
+mkdir -p .build
+for i in ${SYS[@]}; do
+	echo -n -e "\\rBuild $i deps     "
+	dep=(`\$CXX -MM $i.cpp \${CXXFLAGS} | sed 's/\\\\//' | sed 's/.*://'`)
+	cat >> Makefile << EOF
+.build/$i.o: ${dep[@]} Makefile
+	@echo -n "\\rBuild $i.o"
+	@$CXX -c -o .build/$i.o $i.cpp ${CXXFLAGS} 2>> log
+
+EOF
+done
+echo -e "\\rBuild deps success"

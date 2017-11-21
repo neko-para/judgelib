@@ -6,8 +6,6 @@ This libc is for OI judge use, so functions about file and system aren't impleme
 
 The math library isn't implemented, so use libm.a directly.
 
-You can distribute the file gen, and it will download source from github by git.
-
 ## Build
 
 To build this lib, you will need GNU bash, gcc and GNU make.
@@ -23,7 +21,7 @@ Type ```make install PREFIX=${PREFIX}``` to install to ${PREFIX}, default is /us
 To use this lib, compile the program like this:
 
 ```shell
-gcc test.cpp -o test -I${PREFIX}/include -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib -lm
+g++ test.cpp -o test -I${PREFIX}/include -I{PREFIX}/include/c++ -L${PREFIX}/lib -nostdlib ${PREFIX}/lib/crt.o -ljudge --Wl,--rpath=${PREFIX}/lib -lm
 ```
 
 Where ${PREFIX} is the install prefix.
