@@ -80,7 +80,7 @@ static struct FILE* fscanf_stream;
 static const char* sscanf_ptr;
 
 static char _scan_file() {
-	return fscanf_last = getc(fscanf_stream);
+	return (fscanf_last = getc(fscanf_stream)) == EOF ? 0 : fscanf_last;
 }
 
 static void _scan_unget_file() {
@@ -231,6 +231,254 @@ static int _scanf(char (*fun_getc)(), void (*fun_unget)(), const char* format, v
 					}
 					break;
 				}
+				case 'd': {
+					register long long num = 0;
+					int f = 1;
+					do {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+						char c = fun_getc();
+						--maxi_read;
+						if (c == '+' || c == '-') {
+							if (maxi_read <= 0) {
+								return scanf_nformat;
+							}
+							f = (c == '-' ? -1 : 1);
+							c = fun_getc();
+							--maxi_read;
+						}
+						if (!isdigit(c)) {
+							return scanf_nformat;
+						}
+						num = (c ^ '0');
+						do {
+							c = fun_getc();
+							if (!maxi_read-- || !isdigit(c)) {
+								break;
+							}
+							num = ((num + (num << 2)) << 1) + (c ^ '0');
+						} while (1);
+						fun_unget();
+					} while (0);
+					++scanf_nformat;
+					if (!ignore) {
+						num *= f;
+						switch(length) {
+						case 0:
+							*va_arg(ap, int*) = num;
+							break;
+						case 1:
+							*va_arg(ap, long*) = num;
+							break;
+						case 3:
+							*va_arg(ap, long long*) = num;
+							break;
+						}
+					}
+					break;
+				}
+				case 'u': {
+					register unsigned long long num = 0;
+					do {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+						char c = fun_getc();
+						--maxi_read;
+						if (!isdigit(c)) {
+							return scanf_nformat;
+						}
+						num = (c ^ '0');
+						do {
+							c = fun_getc();
+							if (!maxi_read-- || !isdigit(c)) {
+								break;
+							}
+							num = ((num + (num << 2)) << 1) + (c ^ '0');
+						} while (1);
+						fun_unget();
+					} while (0);
+					++scanf_nformat;
+					if (!ignore) {
+						switch(length) {
+						case 0:
+							*va_arg(ap, unsigned*) = num;
+							break;
+						case 1:
+							*va_arg(ap, unsigned long*) = num;
+							break;
+						case 3:
+							*va_arg(ap, unsigned long long*) = num;
+							break;
+						}
+					}
+					break;
+				}
+				case 'o': {
+					register long long num = 0;
+					int f = 1;
+					do {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+						char c = fun_getc();
+						--maxi_read;
+						if (c == '+' || c == '-') {
+							if (maxi_read <= 0) {
+								return scanf_nformat;
+							}
+							f = (c == '-' ? -1 : 1);
+							c = fun_getc();
+							--maxi_read;
+						}
+						if (!isdigit(c) || c >= '8') {
+							return scanf_nformat;
+						}
+						num = (c ^ '0');
+						do {
+							c = fun_getc();
+							if (!maxi_read-- || !(isdigit(c) && c < '8')) {
+								break;
+							}
+							num = (num << 3) + (c ^ '0');
+						} while (1);
+						fun_unget();
+					} while (0);
+					++scanf_nformat;
+					if (!ignore) {
+						num *= f;
+						switch(length) {
+						case 0:
+							*va_arg(ap, int*) = num;
+							break;
+						case 1:
+							*va_arg(ap, long*) = num;
+							break;
+						case 3:
+							*va_arg(ap, long long*) = num;
+							break;
+						}
+					}
+					break;
+				}
+				case 'x': {
+					register long long num = 0;
+					int f = 1;
+					do {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+						char c = fun_getc();
+						--maxi_read;
+						if (c == '+' || c == '-') {
+							if (maxi_read <= 0) {
+								return scanf_nformat;
+							}
+							f = (c == '-' ? -1 : 1);
+							c = fun_getc();
+							--maxi_read;
+						}
+						if (c == '0') {
+							if (maxi_read <= 0) {
+								break;
+							}
+							c = fun_getc();
+							--maxi_read;
+							if (toupper(c) == 'X') {
+								if (maxi_read <= 0) {
+									break;
+								}
+							} else {
+								fun_unget();
+								break;
+							}
+						}
+						if (!isxdigit(c)) {
+							return scanf_nformat;
+						}
+						num = isdigit(c) ? (c ^ '0') : (toupper(c) - 'A' + 10);
+						do {
+							c = fun_getc();
+							if (!maxi_read-- || !isxdigit(c)) {
+								break;
+							}
+							num = (num << 4) + (isdigit(c) ? (c ^ '0') : (toupper(c) - 'A' + 10));
+						} while (1);
+						fun_unget();
+					} while (0);
+					++scanf_nformat;
+					if (!ignore) {
+						num *= f;
+						switch(length) {
+						case 0:
+							*va_arg(ap, int*) = num;
+							break;
+						case 1:
+							*va_arg(ap, long*) = num;
+							break;
+						case 3:
+							*va_arg(ap, long long*) = num;
+							break;
+						}
+					}
+					break;
+				}
+				case 'f':
+				case 'e':
+				case 'g':
+					// TODO: Add f, e, g support.
+					break;
+				case 'c': {
+					if (maxi_read == 1) {
+						while (isspace(fun_getc())) {}
+						fun_unget();
+					}
+					if (ignore) {
+						char c;
+						size_t i;
+						for (i = 0; i < maxi_read; ++i) {
+							c = fun_getc();
+							if (!c) {
+								return scanf_nformat;
+							}
+						}
+					} else {
+						char* c = va_arg(ap, char*);
+						size_t i;
+						for (i = 0; i < maxi_read; ++i) {
+							*c = fun_getc();
+							if (!*c++) {
+								return scanf_nformat;
+							}
+						}
+					}
+					++scanf_nformat;
+					break;
+				}
+				case 's': {
+					while (isspace(fun_getc())) {}
+					fun_unget();
+					if (ignore) {
+						if (fun_getc() == 0) {
+							return scanf_nformat;
+						} else {
+							fun_unget();
+						}
+						while (!isspace(fun_getc())) {
+							;
+						}
+					} else {
+						char* c = va_arg(ap, char*);
+						if (fun_getc() == 0) {
+							return scanf_nformat;
+						} else {
+							fun_unget();
+						}
+						while (!isspace(*c = fun_getc()) && *c) {
+							++c;
+						}
+					}
+					++scanf_nformat;
+					break;
+				}
+				// TODO: Add %p, %[] %[^] %n
 				}
 			}
 		} else {

@@ -2,12 +2,7 @@
 #include <stdlib.h>
 
 int main() {
-	int sum = 0;
-	int x;
-	for (int i = 0; i < 50000000; ++i) {
-		scanf("%i", &x);
-		sum += x;
-		// printf("%d ", i);
-	}
-	return 0;
+	char buf[256];
+	scanf("%8c", buf);
+	printf("%s", buf);
 }
