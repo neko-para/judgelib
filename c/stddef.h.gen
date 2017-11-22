@@ -27,6 +27,7 @@ EOF
 $CC temp.c -o temp $CFLAGS
 PTRDIFF_T_SIZE=`./temp`
 rm temp
+rm temp.c
 case $SIZE_T_SIZE in
 	4)
 		SIZE_T="unsigned";

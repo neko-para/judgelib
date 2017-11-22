@@ -1,5 +1,5 @@
-default: all
+all:
 
 %:
-	make -C c $@
-	make -C c++ $@
+	make -C c $@ --no-print-directory
+	make -C c++ $@ --no-print-directory

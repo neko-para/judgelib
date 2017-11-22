@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 CXX=g++
 AS=as
 BIT=$1
