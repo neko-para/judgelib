@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+// #include <new>
 
 int main() {
-	char buf[256];
-	scanf("%8c", buf);
-	printf("%s", buf);
+	// new int;
+	char* str = new char[9];
+	strcpy(str, "Hello");
+	printf("%s", str);
 }

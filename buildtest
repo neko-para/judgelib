@@ -1,0 +1,2 @@
+#!/bin/sh
+g++ -m$1 test.cpp c/crt.o -o test -Lc -Lc++ -Ic -Ic++/c++ -Wl,--rpath=c -Wl,--rpath=c++ -ljudge -ljudgecxx -nostdlib
