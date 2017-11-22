@@ -1,0 +1,135 @@
+#ifndef _MEMORY_
+#define _MEMORY_
+
+#include <stddef.h>
+
+template <typename Type>
+class allocator;
+
+template <>
+class allocator<void> {
+public:
+	typedef void* pointer;
+	typedef const void* const_pointer;
+	typedef void value_type;
+	template <typename T>
+
+	struct rebind {
+		typedef allocator<T> other;
+	};
+};
+
+template <typename Type>
+class allocator {
+public:
+	typedef Type value_type;
+	typedef Type* pointer;
+	typedef Type& reference;
+	typedef const Type* const_pointer;
+	typedef const Type& const_reference;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+
+	template <typename T>
+	struct rebind {
+		typedef allocator<T> other;
+	};
+
+	allocator() {}
+	template <typename T>
+	allocator(const allocator<T>& ) {}
+	~allocator() {}
+
+	pointer address(reference x) const {
+		return &x;
+	}
+	const_pointer address(const_reference x) const {
+		return &x;
+	}
+
+	pointer allocate(size_type n, allocator<void>::const_pointer = 0) {
+		return static_cast<pointer>(::operator new(n * sizeof(Type)));
+	}
+	void deallocate(pointer p, size_type) {
+		::operator delete(p);
+	}
+
+	size_type max_size() const {
+		return size_type(-1) / sizeof(Type);
+	}
+
+	void construct(pointer p, const_reference val) {
+		::new(p)Type(val);
+	}
+	void destroy(pointer p) {
+		p->~Type();
+	}
+};
+
+template <typename Type>
+class auto_ptr;
+
+template <typename Type>
+class auto_ptr_ref {
+	Type* ptr;
+
+	explicit auto_ptr_ref(Type* p) : ptr(p) {}
+};
+
+template <>
+class auto_ptr<void> {
+	typedef void element_type;
+};
+
+template <typename Type>
+class auto_ptr {
+	typedef Type element_type;
+
+	element_type* ptr;
+
+	explicit auto_ptr(element_type* p = 0) : ptr(p) {}
+	auto_ptr(auto_ptr& p) : ptr(p.release()) {}
+	template <typename T>
+	auto_ptr(auto_ptr_ref<T> ref) : ptr(ref.ptr) {}
+	auto_ptr& operator=(auto_ptr& p) {
+		reset(p.release());
+		return *this;
+	}
+	template <typename T>
+	auto_ptr& operator=(auto_ptr_ref<T> ref) {
+		reset(ref.ptr);
+		return *this;
+	}
+
+	template <typename T>
+	operator auto_ptr_ref<T>() const {
+		return auto_ptr_ref<T>(release());
+	}
+	template <typename T>
+	operator auto_ptr<T>() const {
+		return auto_ptr<T>(release());
+	}
+
+	element_type* release() {
+		element_type* p = ptr;
+		ptr = 0;
+		return p;
+	}
+	void reset(element_type* p = 0) {
+		if (ptr != p) {
+			delete ptr;
+			ptr = p;
+		}
+	}
+	element_type* get() const {
+		return ptr;
+	}
+	element_type& operator*() const {
+		return *ptr;
+	}
+	element_type* operator->() const {
+		return ptr;
+	}
+};
+
+#endif
