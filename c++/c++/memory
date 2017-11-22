@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <iterator>
+#include <utility>
 
 namespace std {
 
@@ -158,6 +159,39 @@ public:
 		return tmp;
 	}
 };
+
+template <typename Type>
+inline pair<Type*, ptrdiff_t> get_temporary_buffer(ptrdiff_t n) {
+	return pair<Type*, ptrdiff_t>(::operator new(n * sizeof(Type)), n);
+}
+
+template <typename Type>
+inline void return_temporary_buffer(Type* p) {
+	::operator delete(p);
+}
+
+template <typename InputIterator, typename ForwardIterator>
+inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) {
+	while (first != last) {
+		new (static_cast<void*>(&*result++)) typename iterator_traits<ForwardIterator>::value_type (*first++);
+	}
+	return result;
+}
+
+template <typename InputIterator, typename Type>
+inline void uninitialized_fill(InputIterator first, InputIterator last, const Type& value) {
+	while (first != last) {
+		new (static_cast<void*>(&*first++)) typename iterator_traits<InputIterator>::value_type (value);
+	}
+}
+
+template <typename InputIterator, typename Size, typename Type>
+inline void uninitialized_fill_n(InputIterator first, Size n, const Type& value) {
+	while (n--) {
+		new (static_cast<void*>(&*first++)) typename iterator_traits<InputIterator>::value_type (value);
+	}
+}
+
 
 }
 
