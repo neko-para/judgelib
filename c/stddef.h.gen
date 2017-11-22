@@ -1,0 +1,59 @@
+#!/bin/bash
+CC=gcc
+BIT=$1
+if [ -z "$BIT" ]; then
+	BIT=32
+fi
+CFLAGS="$CFLAGS -m$BIT"
+
+cat > temp.c << EOF
+#include <stdio.h>
+#include <stddef.h>
+
+int main() {
+	printf("%u", (unsigned)sizeof(size_t));
+}
+EOF
+$CC temp.c -o temp $CFLAGS
+SIZE_T_SIZE=`./temp`
+cat > temp.c << EOF
+#include <stdio.h>
+#include <stddef.h>
+
+int main() {
+	printf("%u", (unsigned)sizeof(ptrdiff_t));
+}
+EOF
+$CC temp.c -o temp $CFLAGS
+PTRDIFF_T_SIZE=`./temp`
+rm temp
+case $SIZE_T_SIZE in
+	4)
+		SIZE_T="unsigned";
+		;;
+	8)
+		SIZE_T="unsigned long";
+		;;
+esac
+case $PTRDIFF_T_SIZE in
+	4)
+		PTRDIFF_T="int";
+		;;
+	8)
+		PTRDIFF_T="long";
+		;;
+esac
+
+cat > stddef.h << EOF
+#ifndef _STDDEF_H_
+#define _STDDEF_H_
+
+typedef ${PTRDIFF_T} ptrdiff_t;
+typedef ${SIZE_T} size_t;
+
+#define NULL ((void*)0)
+
+#define offsetof(type, member) __builtin_offsetof(type, member)
+
+#endif
+EOF
