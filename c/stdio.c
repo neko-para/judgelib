@@ -423,7 +423,6 @@ static int _scanf(char (*fun_getc)(), void (*fun_unget)(), const char* format, v
 				case 'f':
 				case 'e':
 				case 'g':
-					// TODO: Add f, e, g support.
 					break;
 				case 'c': {
 					if (maxi_read == 1) {
@@ -478,7 +477,6 @@ static int _scanf(char (*fun_getc)(), void (*fun_unget)(), const char* format, v
 					++scanf_nformat;
 					break;
 				}
-				// TODO: Add %p, %[] %[^] %n
 				}
 			}
 		} else {
@@ -880,7 +878,6 @@ static int _printf(void (*fun_putc)(char), const char* format, va_list ap) {
 					free(temp);
 					break;
 				}
-				/* TODO: Add float e, E, g, G support. */
 				}
 				break;
 			} while (0);
