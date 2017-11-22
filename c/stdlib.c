@@ -202,6 +202,13 @@ void free(void* ptr) {
 	}
 }
 
+void* calloc(size_t nmemb, size_t size) {
+	nmemb *= size;
+	void* p = malloc(nmemb);
+	memset(p, 0, nmemb);
+	return p;
+}
+
 void* realloc(void* ptr, size_t size) {
 	Splay* p = CheckValid(root, ptr - sizeof(Splay));
 	if (!p) {

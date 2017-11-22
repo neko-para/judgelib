@@ -30,6 +30,8 @@ int rand();
 void srand(unsigned seed);
 void* malloc(size_t size);
 void free(void* ptr);
+void* calloc(size_t nmemb, size_t size);
+void* realloc(void* ptr, size_t size);
 void abort() __attribute__ ((__noreturn__));
 void exit(int status) __attribute__ ((__noreturn__));
 void _exit(int status) __attribute__ ((__noreturn__));
