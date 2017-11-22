@@ -1,0 +1,49 @@
+#ifndef _UTILITY_
+#define _UTILITY_
+
+namespace std {
+
+template <typename T1, typename T2>
+struct pair {
+	T1 first;
+	T2 second;
+
+	pair() {}
+	pair(const T1& v1, const T2& v2) : first(v1), second(v2) {}
+	template <typename U1, typename U2>
+	pair(const pair<U1, U2>& p) : first(p.first), second(p.second) {}
+};
+
+template <typename T1, typename T2>
+inline bool operator==(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return p1.first == p2.first && p1.second == p2.second;
+}
+
+template <typename T1, typename T2>
+inline bool operator!=(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return !(p1 == p2);
+}
+
+template <typename T1, typename T2>
+inline bool operator<(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return p1.first < p2.first || (!(p2.first < p1.first) && p1.second < p2.second);
+}
+
+template <typename T1, typename T2>
+inline bool operator<=(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return !(p2 < p1);
+}
+
+template <typename T1, typename T2>
+inline bool operator>(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return p2 < p1;
+}
+
+template <typename T1, typename T2>
+inline bool operator>=(const pair<T1, T2>& p1, const pair<T1, T2>& p2) {
+	return !(p1 < p2);
+}
+
+}
+
+#endif
