@@ -1,0 +1,237 @@
+#ifndef _ITERATOR_
+#define _ITERATOR_
+
+#include <stddef.h>
+
+struct input_iterator_tag {};
+struct output_iterator_tag {};
+struct forward_iterator_tag : public input_iterator_tag {};
+struct bidirectional_iterator_tag : public forward_iterator_tag {};
+struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+
+template <typename Type>
+struct iterator_traits;
+
+template <typename Type>
+struct iterator_traits<Type*> {
+	typedef ptrdiff_t difference_type;
+	typedef Type value_type;
+	typedef Type* pointer;
+	typedef Type& reference;
+	typedef random_access_iterator_tag iterator_category;
+};
+
+template <typename Type>
+struct iterator_traits<const Type*> {
+	typedef ptrdiff_t difference_type;
+	typedef Type value_type;
+	typedef Type* pointer;
+	typedef Type& reference;
+	typedef random_access_iterator_tag iterator_category;
+};
+
+template <typename Type>
+struct iterator_traits {
+	typedef typename Type::dirrenence_type difference_type;
+	typedef typename Type::value_type value_type;
+	typedef typename Type::pointer pointer;
+	typedef typename Type::reference reference;
+	typedef typename Type::iterator_category iterator_category;
+};
+
+template <typename Category, typename Type, typename Distance = ptrdiff_t,
+          typename Pointer = Type*, typename Reference = Type&>
+class iterator {
+	typedef Type value_type;
+	typedef Distance difference_type;
+	typedef Pointer pointer;
+	typedef Reference reference;
+	typedef Category iterator_category;
+};
+
+template <typename InputIterator, typename Distance>
+inline void __advance(InputIterator& it, Distance n, input_iterator_tag) {
+	while (n--) {
+		++it;
+	}
+}
+
+template <typename BidirectionalIterator, typename Distance>
+inline void __advance(BidirectionalIterator& it, Distance n, bidirectional_iterator_tag) {
+	if (n > 0) {
+		while (n--) {
+			++it;
+		}
+	} else {
+		while (n++) {
+			--it;
+		}
+	}
+}
+
+template <typename RandomAccessIterator, typename Distance>
+inline void __advance(RandomAccessIterator& it, Distance n, random_access_iterator_tag) {
+	it += n;
+}
+
+template <typename InputIterator, typename Distance>
+inline void advance(InputIterator& it, Distance n) {
+	__advance(it, n, iterator_traits<InputIterator>::iterator_category());
+}
+
+template <typename InputIterator>
+inline typename iterator_traits<InputIterator>::difference_type __distance(InputIterator first, InputIterator last, input_iterator_tag) {
+	typename iterator_traits<InputIterator>::difference_type dis = 0;
+	while (first++ != last) {
+		++dis;
+	}
+	return dis;
+}
+
+template <typename RandomAccessIterator>
+inline typename iterator_traits<RandomAccessIterator>::difference_type __distance(RandomAccessIterator first, RandomAccessIterator last, random_access_iterator_tag) {
+	return last - first;
+}
+
+template <typename InputIterator>
+inline typename iterator_traits<InputIterator>::difference_type distance(InputIterator first, InputIterator last) {
+	return __distance(first, last, iterator_traits<InputIterator>::iterator_category());
+}
+
+template <typename Container>
+class back_insert_iterator : public iterator<output_iterator_tag, void, void, void, void> {
+	Container* container;
+public:
+	explicit back_insert_iterator(Container& cont) : container(&cont) {}
+	back_insert_iterator<Container>& operator=(typename Container::const_reference ref) {
+		container->push_back(ref);
+		return *this;
+	}
+	back_insert_iterator<Container>& operator++() {
+		return *this;
+	}
+	back_insert_iterator<Container> operator++(int) {
+		return *this;
+	}
+};
+
+template <typename Container>
+class front_insert_iterator : public iterator<output_iterator_tag, void, void, void, void> {
+	Container* container;
+public:
+	explicit front_insert_iterator(Container& cont) : container(&cont) {}
+	front_insert_iterator<Container>& operator=(typename Container::const_reference ref) {
+		container->push_front(ref);
+		return *this;
+	}
+	front_insert_iterator<Container>& operator++() {
+		return *this;
+	}
+	front_insert_iterator<Container> operator++(int) {
+		return *this;
+	}
+};
+
+template <typename Container>
+class insert_iterator : public iterator<output_iterator_tag, void, void, void, void> {
+	Container* container;
+	typename Container::iterator iterator;
+public:
+	explicit insert_iterator(Container& cont, typename Container::iterator& it) : container(&cont), iterator(it) {}
+	insert_iterator<Container>& operator=(typename Container::const_reference ref) {
+		iterator = container->insert(iterator, ref);
+		++iterator;
+		return *this;
+	}
+	insert_iterator<Container>& operator++() {
+		return *this;
+	}
+	insert_iterator<Container> operator++(int) {
+		return *this;
+	}
+};
+
+template <class Container>
+inline back_insert_iterator<Container> back_inserter(Container& x) {
+	return back_insert_iterator<Container>(x);
+}
+
+template <class Container>
+inline front_insert_iterator<Container> front_inserter(Container& x) {
+	return front_insert_iterator<Container>(x);
+}
+
+template <class Container>
+inline insert_iterator<Container> inserter(Container& x, typename Container::iterator it) {
+	return insert_iterator<Container>(x, it);
+}
+
+template <typename Iterator>
+class reverse_iterator : public iterator <
+	typename iterator_traits<Iterator>::iterator_category,
+	typename iterator_traits<Iterator>::value_type,
+	typename iterator_traits<Iterator>::difference_type,
+	typename iterator_traits<Iterator>::pointer,
+	typename iterator_traits<Iterator>::reference > {
+public:
+	typedef Iterator iterator_type;
+	typedef typename iterator_traits<Iterator>::iterator_category iterator_category;
+	typedef typename iterator_traits<Iterator>::value_type value_type;
+	typedef typename iterator_traits<Iterator>::difference_type difference_type;
+	typedef typename iterator_traits<Iterator>::pointer pointer;
+	typedef typename iterator_traits<Iterator>::reference reference;
+private:
+	iterator_type iterator;
+public:
+	reverse_iterator() {}
+	explicit reverse_iterator(iterator_type it) : iterator(it) {}
+	template <typename T>
+	reverse_iterator(const reverse_iterator<T>& it) : iterator(it.base()) {}
+
+	iterator_type base() const {
+		return iterator;
+	}
+	reference operator*() const {
+		reverse_iterator<iterator_type> tmp = iterator;
+		return *--tmp;
+	}
+	pointer operator->() const {
+		reverse_iterator<iterator_type> tmp = iterator;
+		return &*--tmp;
+	}
+	reference operator[](difference_type n) const {
+		return *(*this + n);
+	}
+	reverse_iterator<iterator_type> operator+(difference_type n) const {
+		return reverse_iterator<iterator_type>(iterator - n);
+	}
+	reverse_iterator<iterator_type>& operator++() {
+		--iterator;
+		return *this;
+	}
+	reverse_iterator<iterator_type> operator++(int) {
+		reverse_iterator<iterator_type> tmp = iterator;
+		return reverse_iterator<iterator_type>(--tmp);
+	}
+	reverse_iterator<iterator_type>& operator+=(difference_type n) {
+		iterator -= n;
+		return *this;
+	}
+	reverse_iterator<iterator_type> operator-(difference_type n) const {
+		return reverse_iterator<iterator_type>(iterator + n);
+	}
+	reverse_iterator<iterator_type>& operator--() {
+		++iterator;
+		return *this;
+	}
+	reverse_iterator<iterator_type> operator--(int) {
+		reverse_iterator<iterator_type> tmp = iterator;
+		return reverse_iterator<iterator_type>(++tmp);
+	}
+	reverse_iterator<iterator_type>& operator-=(difference_type n) {
+		iterator += n;
+		return *this;
+	}
+};
+
+#endif
