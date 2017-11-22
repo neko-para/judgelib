@@ -1,11 +1,11 @@
-#!/bin/bash -x
+#!/bin/bash
 CXX=g++
 AS=as
 BIT=$1
 if [ -z "$BIT" ]; then
 	BIT=32
 fi
-CXXFLAGS="$CXXFLAGS -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT -I../c"
+CXXFLAGS="$CXXFLAGS -I../c -Ic++ -fPIC -Wall -Wextra -g -m$BIT -D_JUDGE_BIT_=$BIT"
 
 mkdir -p .build
 
