@@ -52,7 +52,11 @@ cat > stddef.h << EOF
 typedef ${PTRDIFF_T} ptrdiff_t;
 typedef ${SIZE_T} size_t;
 
+#ifdef __cplusplus
+#define NULL 0
+#else
 #define NULL ((void*)0)
+#endif
 
 #define offsetof(type, member) __builtin_offsetof(type, member)
 
