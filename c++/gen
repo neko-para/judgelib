@@ -69,6 +69,9 @@ EOF
 	# echo -n -e "\\rGenerate ${i::-4}"
 	# ./$i $BIT
 # done
+for i in *.gen; do
+	./$i
+done
 echo -e "\\nBuild deps"
 mkdir -p .build
 for i in ${SYS[@]}; do
