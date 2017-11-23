@@ -7,6 +7,7 @@ fi
 CXXFLAGS="$CXXFLAGS -m$BIT"
 
 function getmacro {
+	echo -e -n "\\r$1:$2          m"
 	if [ -n "`echo $1 | sed -n '/unsigned/p'`" ]; then
 		USE_UNSIGNED=1
 	else
@@ -60,6 +61,7 @@ EOF
 }
 
 function getd {
+	echo -e -n "\\r$1:$2          "
 	cat > temp.cpp << EOF
 #include <iostream>
 #include <limits>
@@ -72,6 +74,7 @@ EOF
 }
 
 function getb {
+	echo -e -n "\\r$1:$2          "
 	cat > temp.cpp << EOF
 #include <iostream>
 #include <limits>
@@ -84,6 +87,7 @@ EOF
 }
 
 function gete {
+	echo -e -n "\\r$1:$2          "
 	cat > temp.cpp << EOF
 #include <iostream>
 #include <limits>
@@ -198,7 +202,6 @@ EOF
 	echo -n >> c++/limits "	static const float_round_style round_style = ";
 	gete "$type" round_style -1 round_indeterminate 0 round_toward_zero 1 round_to_nearest 2 round_toward_infinity 3 round_toward_neg_infinity 4
 	echo >> c++/limits ";"
-
 	echo >> c++/limits "};"
 done
 rm temp.cpp

@@ -70,6 +70,7 @@ EOF
 	# ./$i $BIT
 # done
 for i in *.gen; do
+	echo -n -e "\\rGenerate ${i::-4}"
 	./$i
 done
 echo -e "\\nBuild deps"
