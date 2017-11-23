@@ -108,6 +108,121 @@ int strncmp(const char* s1, const char* s2, size_t n) {
 	return 0;
 }
 
+void* memchr(const void* s, int c, size_t n) {
+	while (n--) {
+		if (*((unsigned char*)s) == c) {
+			return (void*)s;
+		} else {
+			++s;
+		}
+	}
+	return NULL;
+}
+
+char* strchr(const char* s, int c) {
+	while (*s != c && *s) {
+		++s;
+	}
+	return *s == c ? (char*)s : NULL;
+}
+
+char* strrchr(const char* s, int c) {
+	char* p = NULL;
+	while (*s) {
+		if (*s == c) {
+			p = (char*)s;
+		}
+		++s;
+	}
+	return p;
+}
+
+size_t strspn(const char* s, const char* accept) {
+	unsigned char mp[256] = {0};
+	size_t n = 0;
+	while (*accept) {
+		mp[*accept++] = 1;
+	}
+	while (mp[*s++]) {
+		++n;
+	}
+	return n;
+}
+
+size_t strcspn(const char* s, const char* accept) {
+	unsigned char mp[256] = {0};
+	size_t n = 0;
+	while (*accept) {
+		mp[*accept++] = 1;
+	}
+	while (!mp[*s++]) {
+		++n;
+	}
+	return n;
+}
+
+char *strpbrk(const char *s, const char *accept) {
+	size_t n = strcspn(s, accept);
+	return s[n] ? (char*)s + n : NULL;
+}
+
+char* strstr(const char* haystack, const char* needle) {
+	size_t hl = strlen(haystack);
+	size_t nl = strlen(needle);
+	if (nl > hl) {
+		return NULL;
+	}
+	const char* end = haystack + hl - nl;
+	for (const char* p = haystack; p != end; ++p) {
+		int f = 1;
+		for (size_t i = 0; i < nl; ++i) {
+			if (p[i] != needle[i]) {
+				f = 0;
+				break;
+			}
+		}
+		if (f) {
+			return (char*)p;
+		}
+	}
+	return NULL;
+}
+
+char* strtok(char* str, const char* delim) {
+	static char* ptr;
+	if (str) {
+		str += strspn(str, delim);
+		if (*str) {
+			char* p = str;
+			ptr = strpbrk(str, delim);
+			if (ptr) {
+				*ptr++ = 0;
+			}
+			return p;
+		} else {
+			ptr = NULL;
+			return NULL;
+		}
+	} else {
+		if (ptr) {
+			ptr += strspn(ptr, delim);
+			if (*ptr) {
+				char* p = ptr;
+				ptr = strpbrk(ptr, delim);
+				if (ptr) {
+					*ptr++ = 0;
+				}
+				return p;
+			} else {
+				ptr = NULL;
+				return NULL;
+			}
+		} else {
+			return NULL;
+		}
+	}
+}
+
 void* memset(void* s, int c, size_t n) {
 	void* p = s;
 	size_t nn = n >> 2;

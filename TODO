@@ -1,3 +1,2 @@
-Add string.h missing functions
 Add printf %g support
 Add scanf %f,e,g %[] %n %p support

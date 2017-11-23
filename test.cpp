@@ -1,11 +1,17 @@
+/* strtok example */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-// #include <new>
 
-int main() {
-	// new int;
-	char* str = new char[9];
-	strcpy(str, "Hello");
-	printf("%s", str);
+int main ()
+{
+  char str[] ="- This, a sample string.";
+  char * pch;
+  printf ("Splitting string \"%s\" into tokens:\n",str);
+  pch = strtok (str,(const char*)" ,.-");
+  while (pch != NULL)
+  {
+    printf ("%s\n",pch);
+    pch = strtok (NULL, " ,.-");
+  }
+  return 0;
 }
