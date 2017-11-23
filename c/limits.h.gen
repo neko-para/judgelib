@@ -12,11 +12,11 @@ function getmacro {
 #include <stdio.h>
 
 int main() {
-	printf("$2", ($3)$1);
+	printf("($3)$2", ($3)$1);
 }
 EOF
 	$CC temp.c -o temp $CFLAGS
-	echo >> limits.h "#define $1 `./temp`"
+	echo >> limits.h "#define $1 (`./temp``echo $3 | sed -n 's/[^l]//pg'`)"
 	rm temp temp.c
 }
 
@@ -31,11 +31,11 @@ for i in CHAR SHRT INT; do
 	getmacro ${i}_MAX %d int
 	getmacro U${i}_MAX %u unsigned
 done
-getmacro LONG_MIN %ld long
-getmacro LONG_MAX %ld long
-getmacro ULONG_MAX %lu "unsigned long"
-getmacro LLONG_MIN %lld "long long"
-getmacro LLONG_MAX %lld "long long"
-getmacro ULLONG_MAX %llu "unsigned long long"
+getmacro LONG_MIN %#lx long
+getmacro LONG_MAX %#lx long
+getmacro ULONG_MAX %#lx "unsigned long"
+getmacro LLONG_MIN %#llx "long long"
+getmacro LLONG_MAX %#llx "long long"
+getmacro ULLONG_MAX %#llx "unsigned long long"
 echo >> limits.h
 echo -n >> limits.h "#endif"
