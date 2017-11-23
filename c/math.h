@@ -1,6 +1,9 @@
 #ifndef _MATH_H_
 #define _MATH_H_
 
+#define NAN (0.0f/0.0f)
+#define HUGE_VAL (1.0/0.0)
+
 #ifdef __cplusplus
 #define _MATH_FUNC_(name) \
 	extern "C" double name(double x); \
