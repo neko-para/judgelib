@@ -1,0 +1,211 @@
+#!/bin/bash
+CXX=g++
+BIT=$1
+if [ -z "$BIT" ]; then
+	BIT=32
+fi
+CXXFLAGS="$CXXFLAGS -m$BIT"
+
+function getmacro {
+	if [ -n "`echo $1 | sed -n '/unsigned/p'`" ]; then
+		USE_UNSIGNED=1
+	else
+		USE_UNSIGNED=0
+	fi
+	IS_FLOAT=0
+	case "$1" in
+		float|double|"long double")
+			IS_FLOAT=1
+			;;
+	esac
+	cat > temp.cpp << EOF
+#include <iostream>
+#include <limits>
+int main() {
+	if (sizeof($1) == 1) {
+		if ($USE_UNSIGNED) {
+			std::cout << (unsigned)std::numeric_limits<$1>::$2;
+		} else {
+			std::cout << (int)std::numeric_limits<$1>::$2;
+		}
+	} else {
+		if (!$IS_FLOAT) {
+			std::cout << std::hex << "($1)0x";
+		}
+		std::cout << ($1)std::numeric_limits<$1>::$2;
+	}
+}
+EOF
+	$CXX temp.cpp -o temp $CXXFLAGS
+	if [ "`./temp`" == "inf" ]; then
+		echo -n >> c++/limits "1.0/0.0";
+	elif [ "`./temp`" == "-inf" ]; then
+		echo -n >> c++/limits "-1.0/0.0";
+	elif [ "`./temp`" == "nan" ]; then
+		echo -n >> c++/limits "0.0/0.0";
+	else
+		echo -n >> c++/limits "`./temp`";
+		case "$1" in
+			"long long")
+				echo -n >> c++/limits "ll"
+				;;
+			"unsigned long long")
+				echo -n >> c++/limits "ull"
+				;;
+			"long double")
+				echo -n >> c++/limits "L"
+				;;
+		esac;
+	fi
+}
+
+function getd {
+	cat > temp.cpp << EOF
+#include <iostream>
+#include <limits>
+int main() {
+	std::cout << (int)std::numeric_limits<$1>::$2;
+}
+EOF
+	$CXX temp.cpp -o temp $CXXFLAGS
+	echo -n >> c++/limits "`./temp`"
+}
+
+function getb {
+	cat > temp.cpp << EOF
+#include <iostream>
+#include <limits>
+int main() {
+	std::cout << (std::numeric_limits<$1>::$2) ? "true" : "false";
+}
+EOF
+	$CXX temp.cpp -o temp $CXXFLAGS
+	echo -n >> c++/limits "`./temp`"
+}
+
+function gete {
+	cat > temp.cpp << EOF
+#include <iostream>
+#include <limits>
+int main() {
+	switch (std::numeric_limits<$1>::$2) {
+EOF
+	while [ -n "$3" ]; do
+		cat >> temp.cpp << EOF
+	case $3:
+		std::cout << "$4";
+		break;
+EOF
+		shift 2
+	done
+cat >> temp.cpp << EOF
+	}
+}
+EOF
+	$CXX temp.cpp -o temp $CXXFLAGS
+	echo -n >> c++/limits "`./temp`"
+}
+
+cat > c++/limits << EOF
+#ifndef _LIMITS_
+#define _LIMITS_
+
+#include <limits.h>
+
+namespace std {
+
+enum float_denorm_style {
+	denorm_indeterminate = -1,
+	denorm_absent = 0,
+	denorm_present = 1
+};
+
+enum float_round_style {
+	round_indeterminate = -1,
+	round_toward_zero = 0,
+	round_to_nearest = 1,
+	round_toward_infinity = 2,
+	round_toward_neg_infinity = 3
+};
+
+template <typename Type>
+struct numeric_limits {
+	static const bool is_specialized = false;
+	static Type min();
+	static Type max();
+	static const int digits = 0;
+	static const int digits10 = 0;
+	static const bool is_signed = false;
+	static const bool is_integer = false;
+	static const bool is_exact = false;
+	static const int radix = 0;
+	static Type epsilon();
+	static Type round_error();
+
+	static const int min_exponent = 0;
+	static const int min_exponent10 = 0;
+	static const int max_exponent = 0;
+	static const int max_exponent10 = 0;
+
+	static const bool has_infinity = false;
+	static const bool has_quiet_NaN = false;
+	static const bool has_signaling_NaN = false;
+	static const float_denorm_style has_denorm = denorm_absent;
+	static const bool has_denorm_loss = false;
+	static Type infinity();
+	static Type quiet_NaN();
+	static Type signaling_NaN();
+	static Type denorm_min();
+
+	static const bool is_iec559 = false;
+	static const bool is_bounded = false;
+	static const bool is_modulo = false;
+
+	static const bool traps = false;
+	static const bool tinyness_before = false;
+	static const float_round_style round_style = round_toward_zero;
+};
+
+EOF
+
+for type in "bool" "char" \
+"signed char" "short" "int" "long" "long long" \
+"unsigned char" "unsigned short" "unsigned" "unsigned long" "unsigned long long" \
+"float" "double" "long double"; do
+	cat >> c++/limits << EOF
+template <>
+struct numeric_limits<$type> {
+	static const bool is_specialized = true;
+EOF
+	for i in "min" "max" "epsilon" "round_error" "infinity" "quiet_NaN" "signaling_NaN" "denorm_min"; do
+		echo -n >> c++/limits "	static const $type $i() { return ";
+		getmacro "$type" "$i()"
+		echo >> c++/limits "; }"
+	done
+	for i in "digits" "digits10" "radix" "min_exponent" "min_exponent10" "max_exponent" "max_exponent10"; do
+		echo -n >> c++/limits "	static const int $i = ";
+		getd "$type" "$i"
+		echo >> c++/limits ";"
+	done
+	for i in "is_signed" "is_integer" "is_exact" "has_infinity" "has_quiet_NaN" "has_signaling_NaN" "has_denorm_loss" "is_iec559" "is_bounded" "is_modulo" "traps" "tinyness_before"; do
+		echo -n >> c++/limits "	static const bool $i = ";
+		getb "$type" "$i"
+		echo >> c++/limits ";"
+	done
+	echo -n >> c++/limits "	static const float_denorm_style has_denorm = ";
+	gete "$type" has_denorm -1 denorm_indeterminate 0 denorm_absent 1 denorm_present
+	echo >> c++/limits ";"
+	echo -n >> c++/limits "	static const float_round_style round_style = ";
+	gete "$type" round_style -1 round_indeterminate 0 round_toward_zero 1 round_to_nearest 2 round_toward_infinity 3 round_toward_neg_infinity 4
+	echo >> c++/limits ";"
+
+	echo >> c++/limits "};"
+done
+rm temp.cpp
+rm temp
+
+cat >> c++/limits << EOF
+}
+
+#endif
+EOF
