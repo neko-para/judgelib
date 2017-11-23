@@ -7,8 +7,8 @@ fi
 CFLAGS="$CFLAGS -m$BIT"
 
 function getmacro {
-	cat > "temp.c" << EOF
-#include <limits.h>
+	cat > temp.c << EOF
+#include <float.h>
 #include <stdio.h>
 
 int main() {
@@ -16,27 +16,25 @@ int main() {
 }
 EOF
 	$CC temp.c -o temp $CFLAGS
-	echo >> limits.h "#define $1 `./temp`"
-	rm temp temp.c
+	echo >> float.h "#define $1 `./temp`$4"
 }
 
-echo > limits.h "#ifndef _LIMITS_H_"
-echo >> limits.h "#define _LIMITS_H_"
-echo >> limits.h
-getmacro CHAR_BIT %d int
-getmacro SCHAR_MIN %d int
-getmacro SCHAR_MAX %d int
-for i in CHAR SHRT INT; do
-	getmacro ${i}_MIN %d int
-	getmacro ${i}_MAX %d int
-	getmacro U${i}_MAX %u unsigned
+echo > float.h "#ifndef _FLOAT_H_"
+echo >> float.h "#define _FLOAT_H_"
+echo >> float.h
+getmacro FLT_RADIX %d int
+getmacro FLT_ROUNDS %d int
+for i in FLT DBL LDBL; do
+	getmacro ${i}_MANT_DIG %d int
+	getmacro ${i}_DIG %d int
+	getmacro ${i}_MIN_EXP %d int
+	getmacro ${i}_MIN_10_EXP %d int
+	getmacro ${i}_MAX_EXP %d int
+	getmacro ${i}_MAX_10_EXP %d int
+	getmacro ${i}_MAX %LE "long double"
+	getmacro ${i}_MIN %LE "long double"
+	getmacro ${i}_EPSILON %LE "long double"
 done
-getmacro LONG_MIN %ld long
-getmacro LONG_MAX %ld long
-getmacro ULONG_MAX %lu "unsigned long"
-getmacro LLONG_MIN %lld "long long"
-getmacro LLONG_MAX %lld "long long"
-getmacro ULLONG_MAX %llu "unsigned long long"
-
-echo >> limits.h
-echo -n >> limits.h "#endif"
+rm temp temp.c
+echo >> float.h
+echo -n >> float.h "#endif"

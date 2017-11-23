@@ -17,7 +17,6 @@ int main() {
 EOF
 	$CC temp.c -o temp $CFLAGS
 	echo >> limits.h "#define $1 (`./temp``echo $3 | sed -n 's/[^l]//pg'`)"
-	rm temp temp.c
 }
 
 echo > limits.h "#ifndef _LIMITS_H_"
@@ -37,5 +36,6 @@ getmacro ULONG_MAX %#lx "unsigned long"
 getmacro LLONG_MIN %#llx "long long"
 getmacro LLONG_MAX %#llx "long long"
 getmacro ULLONG_MAX %#llx "unsigned long long"
+rm temp temp.c
 echo >> limits.h
 echo -n >> limits.h "#endif"
